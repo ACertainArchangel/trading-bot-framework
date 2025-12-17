@@ -1,0 +1,322 @@
+from TickerStream import TickerStream
+from datetime import datetime, timezone, timedelta
+import threading
+from web_dashboard import socketio, app, initialize_stream, main_logger, emit_trade_executed
+import time
+from interfaces.CoinbaseInterface import CoinbaseInterface
+from interfaces.PaperTradingInterface import PaperTradingInterface
+from strategies import Strategy
+
+SYNC_INTERFACE_WITH_BOT = True  # If True, the interface will sync its state with the bot on startup, use this for things like paper trading
+SYNC_BOT_WITH_INTERFACE = False   # If True, the bot will sync its state with the interface on startup, use this for most live trading
+
+assert SYNC_INTERFACE_WITH_BOT ^ SYNC_BOT_WITH_INTERFACE, "Exactly one of SYNC_INTERFACE_WITH_BOT or SYNC_BOT_WITH_INTERFACE can be True and not more than one or less."
+
+# Global lock to prevent concurrent trade execution
+_trade_lock = threading.Lock()
+
+class Bot:
+    def __init__(self, interface, strategy: Strategy = None, pair: str = "BTC-USD", starting_currency: float = 1000.0, starting_asset: float = 0.0, fee_rate: float = 0.0065, fee_in_percent: bool = True, agression: float = 1, loss_tolerance: float = 0.0, SYNC_INTERFACE_WITH_BOT: bool = SYNC_INTERFACE_WITH_BOT, SYNC_BOT_WITH_INTERFACE: bool = SYNC_BOT_WITH_INTERFACE, currency_to_give_bot = None, asset_to_give_bot = None, strategy_params: dict = None):
+
+        assert SYNC_INTERFACE_WITH_BOT ^ SYNC_BOT_WITH_INTERFACE, "Exactly one of SYNC_INTERFACE_WITH_BOT or SYNC_BOT_WITH_INTERFACE can be True and not more than one or less than one."
+        
+        self.strategy = strategy  # Strategy can be set later if None
+        self.strategy_params = strategy_params or {}  # Store strategy params for later use
+
+        if SYNC_INTERFACE_WITH_BOT:
+            if starting_asset != 0.0 and starting_currency != 0.0:
+                raise ValueError("Bot can start with either currency or asset, not both. If you want to start with both, try making two separate bots.")
+
+            self.pair = pair
+            self.currency = starting_currency
+            self.asset = starting_asset
+            self.agression = agression
+            if agression != 1.0:
+                main_logger("⚠️ Warning: Aggression setting other than 1 does not have any effect if syncing interface with bot.")
+            self.fee_rate = fee_rate if not fee_in_percent else fee_rate / 100.0
+            self.loss_tolerance = loss_tolerance
+            main_logger(f"🤖 Bot initialized with {self.currency} USD and {self.asset} {self.pair.split('-')[0]}")
+            main_logger(f"⚙️ Trading parameters: Agression={self.agression}/1.0, Fee Rate={self.fee_rate*100:.2f}%, Loss Tolerance={self.loss_tolerance*100:.2f}%")
+            main_logger("The interface used is: " + str(interface))
+
+            self.position = "long" if self.asset > 0 else "short" # can be "long", or "short"
+
+            self.interface = interface
+            interface.connect_to_exchange()
+            interface.sync_with_bot(self)
+            interface.assert_exchange_sync(self)
+        elif SYNC_BOT_WITH_INTERFACE:
+            self.interface = interface
+            interface.connect_to_exchange()
+            self.currency = interface.fetch_exchange_balance_currency()
+            self.asset = interface.fetch_exchange_balance_asset()
+            self.position = "long" if self.asset > 0 else "short"
+            self.pair = pair
+            self.agression = agression
+            self.fee_rate = fee_rate if not fee_in_percent else fee_rate / 100.0
+            self.loss_tolerance = loss_tolerance
+            main_logger(f"🤖 Bot synced with interface. Starting with {self.currency} {self.pair.split('-')[1]} and {self.asset} {self.pair.split('-')[0]}")
+            main_logger("The interface used is: " + str(interface))
+            main_logger(f"⚙️ Trading parameters: Agression={self.agression}/1.0, Fee Rate={self.fee_rate*100:.2f}%")
+            if currency_to_give_bot != None and asset_to_give_bot != None:
+                main_logger(f"Due to the agression setting of {self.agression}, the bot will only trade with {self.currency * self.agression if self.position == 'short' else self.asset * self.agression} of your {self.pair.split('-')[1] if self.position == 'short' else self.pair.split('-')[0]} balance. (That is {self.agression*100:.2f}% of your total balance).")
+            if currency_to_give_bot != None:
+                self.currency = currency_to_give_bot
+                main_logger(f"🤖 Bot currency balance overridden to {self.currency} {self.pair.split('-')[1]} for trading purposes.")
+                main_logger(f"Warning: The agression setting is ignored when overriding balances directly. Also, ensure that the bot has enough balance to trade with.")
+            if asset_to_give_bot != None:
+                self.asset = asset_to_give_bot
+                main_logger(f"🤖 Bot asset balance overridden to {self.asset} {self.pair.split('-')[0]} for trading purposes.")
+                main_logger(f"Warning: The agression setting is ignored when overriding balances directly. Also, ensure that the bot has enough balance to trade with.")
+            assert (self.currency==0) ^ (self.asset==0), "Bot can start with either currency or asset, not both. If you want to start with both, try making two separate bots."
+            main_logger("Your actual balances from the interface after syncing are: " + str(interface.fetch_exchange_balance_currency()) + self.pair.split("-")[1] + " and " + str(interface.fetch_exchange_balance_asset()) + self.pair.split("-")[0])
+
+        self.currency_baseline = float(self.currency)
+        self.asset_baseline = float(self.asset)
+        
+        # Initialize strategy if provided
+        if self.strategy is not None:
+            # If strategy is a class, instantiate it with this bot
+            if isinstance(self.strategy, type):
+                # Pass strategy_params to the strategy constructor
+                self.strategy = self.strategy(self, **self.strategy_params)
+            # If strategy is already an instance, just set the bot reference
+            elif hasattr(self.strategy, 'bot'):
+                self.strategy.bot = self
+            main_logger(f"📊 Strategy initialized: {self.strategy}")
+
+    def set_strategy(self, strategy: Strategy):
+        """
+        Set or change the trading strategy.
+        
+        Args:
+            strategy: Strategy class or instance to use
+        """
+        if isinstance(strategy, type):
+            self.strategy = strategy(self)
+        else:
+            self.strategy = strategy
+            self.strategy.bot = self
+        main_logger(f"📊 Strategy changed to: {self.strategy}")
+
+    def buy_signal(self, candles):
+        """
+        Determine if conditions are right to buy.
+        Delegates to strategy if one is set, otherwise returns False.
+        """
+        if self.strategy is None:
+            return False
+        return self.strategy.buy_signal(candles)
+
+    def sell_signal(self, candles):
+        """
+        Determine if conditions are right to sell.
+        Delegates to strategy if one is set, otherwise returns False.
+        """
+        if self.strategy is None:
+            return False
+        return self.strategy.sell_signal(candles)
+
+    def execute_buy(self, price: float):
+        """
+        Execute a BUY order (go from SHORT to LONG position).
+        Only executes if the new position would be better than our best previous long position.
+        """
+        # Acquire lock to prevent concurrent execution
+        with _trade_lock:
+            # CRITICAL: Check position first - this prevents double-execution
+            if self.position != "short":
+                main_logger(f"⚠️ BUY BLOCKED: Already in {self.position} position! This should never happen.")
+                print(f"⚠️ CRITICAL: Attempted to buy while in {self.position} position!")
+                return False
+
+            # Calculate what we would receive
+            amount_to_spend = self.currency
+            amount_expected = (amount_to_spend * (1 - self.fee_rate)) / price
+            
+            # Check if this trade would improve our asset baseline (with tolerance)
+            min_acceptable = self.asset_baseline * (1 - self.loss_tolerance)
+            if amount_expected <= min_acceptable:
+                loss_pct = ((min_acceptable - amount_expected) / self.asset_baseline) * 100
+                main_logger(f"🛑 BUY REJECTED: Would receive {amount_expected:.8f} {self.pair.split('-')[0]}, need > {min_acceptable:.8f} (baseline {self.asset_baseline:.8f}, loss {loss_pct:.2f}%, tolerance {self.loss_tolerance*100:.2f}%)")
+                return False
+            
+            # Execute the trade
+            main_logger(f"💰 EXECUTING BUY: Spending {amount_to_spend:.2f} {self.pair.split('-')[1]} at ${price:.2f}")
+            print(f"💰 EXECUTING BUY at ${price:.2f}")
+            
+            # Execute on interface (pass current currency before updating state)
+            interface_result_received, interface_result_spent = self.interface.execute_buy(price, self.fee_rate, self.currency)
+            
+            # Update bot state IMMEDIATELY to prevent race conditions
+            self.position = "long"
+            self.asset = amount_expected
+            self.currency = 0.0
+            
+            # Verify execution
+            if interface_result_received < amount_expected * 0.99:
+                main_logger(f"⚠️ Warning: Bot expected to receive {amount_expected} {self.pair.split('-')[0]} but interface reported only {interface_result_received} {self.pair.split('-')[0]}. There might be an issue.")
+            if interface_result_spent > amount_to_spend * 1.01:
+                main_logger(f"⚠️ Warning: Bot expected to spend {amount_to_spend} {self.pair.split('-')[1]} but interface reported spending {interface_result_spent} {self.pair.split('-')[1]}. There might be an issue.")
+            
+            self.interface.assert_exchange_sync(self)
+
+            # Assert that asset meets minimum acceptable threshold (baseline with tolerance)
+            # Note: With loss_tolerance > 0, new baseline may be slightly less than old baseline
+            assert self.asset > min_acceptable, f"Post-trade asset balance {self.asset:.8f} is not greater than min acceptable {min_acceptable:.8f} (baseline {self.asset_baseline:.8f} with {self.loss_tolerance*100:.2f}% tolerance)"
+
+            # Update baseline - track the best position we've achieved
+            # With loss tolerance, this might be lower than previous baseline
+            self.asset_baseline = self.asset
+            
+            main_logger(f"✅ BUY COMPLETE: Now holding {self.asset:.8f} {self.pair.split('-')[0]} (new baseline: {self.asset_baseline:.8f})")
+            
+            # Emit trade to dashboard
+            emit_trade_executed('BUY', price)
+            
+            return True
+
+
+    def execute_sell(self, price: float):
+        """
+        Execute a SELL order (go from LONG to SHORT position).
+        Only executes if the new position would be better than our best previous short position.
+        """
+        # Acquire lock to prevent concurrent execution
+        with _trade_lock:
+            # CRITICAL: Check position first - this prevents double-execution
+            if self.position != "long":
+                main_logger(f"⚠️ SELL BLOCKED: Already in {self.position} position! This should never happen.")
+                print(f"⚠️ CRITICAL: Attempted to sell while in {self.position} position!")
+                return False
+
+            # Calculate what we would receive
+            amount_to_sell = self.asset
+            amount_expected = (amount_to_sell * price) * (1 - self.fee_rate)
+            
+            # Check if this trade would improve our currency baseline (with tolerance)
+            min_acceptable = self.currency_baseline * (1 - self.loss_tolerance)
+            if amount_expected <= min_acceptable:
+                loss_pct = ((min_acceptable - amount_expected) / self.currency_baseline) * 100
+                main_logger(f"🛑 SELL REJECTED: Would receive {amount_expected:.2f} {self.pair.split('-')[1]}, need > {min_acceptable:.2f} (baseline {self.currency_baseline:.2f}, loss {loss_pct:.2f}%, tolerance {self.loss_tolerance*100:.2f}%)")
+                return False
+            
+            # Execute the trade
+            main_logger(f"💸 EXECUTING SELL: Selling {amount_to_sell:.8f} {self.pair.split('-')[0]} at ${price:.2f}")
+            print(f"💸 EXECUTING SELL at ${price:.2f}")
+            
+            # Execute on interface (pass current asset before updating state)
+            interface_result_received, interface_result_spent = self.interface.execute_sell(price, self.fee_rate, self.asset)
+            
+            # Update bot state IMMEDIATELY to prevent race conditions
+            self.position = "short"
+            self.currency = amount_expected
+            self.asset = 0.0
+            
+            # Verify execution
+            if interface_result_received < amount_expected * 0.99:
+                main_logger(f"⚠️ Warning: Bot expected to receive {amount_expected} {self.pair.split('-')[1]} but interface reported only {interface_result_received} {self.pair.split('-')[1]}. There might be an issue.")
+            if interface_result_spent > amount_to_sell * 1.01:
+                main_logger(f"⚠️ Warning: Bot expected to spend {amount_to_sell} {self.pair.split('-')[0]} but interface reported spending {interface_result_spent} {self.pair.split('-')[0]}. There might be an issue.")
+            
+            self.interface.assert_exchange_sync(self)
+
+            # Assert that currency meets minimum acceptable threshold (baseline with tolerance)
+            # Note: With loss_tolerance > 0, new baseline may be slightly less than old baseline
+            assert self.currency > min_acceptable, f"Post-trade currency balance {self.currency:.2f} is not greater than min acceptable {min_acceptable:.2f} (baseline {self.currency_baseline:.2f} with {self.loss_tolerance*100:.2f}% tolerance)"
+
+            # Calculate profit/loss relative to old baseline
+            profit = self.currency - self.currency_baseline
+            
+            # Update baseline - track the best position we've achieved
+            # With loss tolerance, this might be lower than previous baseline
+            self.currency_baseline = self.currency
+            
+            main_logger(f"✅ SELL COMPLETE: Now holding {self.currency:.2f} {self.pair.split('-')[1]} (new baseline: {self.currency_baseline:.2f}, profit: +${profit:.2f})")
+            
+            # Emit trade to dashboard
+            emit_trade_executed('SELL', price)
+            
+            return True
+
+    def _check_signals_on_new_candle(self, candle: tuple):
+        """
+        Called whenever a new candle arrives. Checks for trading signals.
+        This ensures we never miss a candle, regardless of playback speed.
+        """
+        candles = self._ticker_stream.get_candles()
+        current_price = candle[4]  # Close price of the new candle
+        
+        try:
+            if self.position == "long" and self.sell_signal(candles):
+                # Store old baseline before trade
+                old_baseline = self.currency_baseline
+                # Try to execute sell - only updates position if successful
+                executed = self.execute_sell(current_price)
+                if executed:
+                    profit = self.currency_baseline - old_baseline  # baseline was updated in execute_sell
+                    main_logger(f"📊 Position changed: LONG → SHORT at ${current_price:.2f}")
+                    main_logger(f"💵 Profit: +${profit:.2f} {self.pair.split('-')[1]} (was at ${old_baseline:.2f}, now ${self.currency_baseline:.2f})")
+                    
+            elif self.position == "short" and self.buy_signal(candles):
+                # Store old baseline before trade
+                old_baseline = self.asset_baseline
+                # Try to execute buy - only updates position if successful
+                executed = self.execute_buy(current_price)
+                if executed:
+                    asset_gain = self.asset_baseline - old_baseline  # baseline was updated in execute_buy
+                    main_logger(f"📊 Position changed: SHORT → LONG at ${current_price:.2f}")
+                    main_logger(f"📈 Asset gain: +{asset_gain:.8f} {self.pair.split('-')[0]} (was {old_baseline:.8f}, now {self.asset_baseline:.8f})")
+        except Exception as e:
+            main_logger(f"❌ ERROR during trade execution: {e}")
+            import traceback
+            main_logger(f"📋 Traceback:\n{traceback.format_exc()}")
+
+    def trading_logic_loop(self, ticker_stream: TickerStream):
+        self._ticker_stream = ticker_stream
+        
+        # Wait for initial data
+        while len(ticker_stream.get_candles()) == 0:
+            time.sleep(0.1)
+        
+        main_logger("🤖 Bot trading logic started.")
+        
+        # Initialize baselines
+        initial_price = ticker_stream.get_candles()[-1][4]
+        self.baseline_value = self.currency if self.position == "short" else self.asset * initial_price
+        self.baseline_crypto = self.asset if self.position == "long" else self.currency / initial_price
+        
+        # Register callback to check signals on EVERY new candle
+        ticker_stream.on_new_candle = self._check_signals_on_new_candle
+        
+        main_logger("✅ Bot now checking signals on EVERY candle (event-driven)")
+        
+        # Keep thread alive
+        while True:
+            time.sleep(1)
+        
+
+if __name__ == '__main__':
+
+    interface = PaperTradingInterface()
+
+    bot = Bot(interface)
+
+    strategy = Strategy.macd.MACDStrategy(bot, short_window=12, long_window=26, signal_window=9, min_candles=50)
+    bot.set_strategy(strategy)
+
+    # Start the stream
+    ticker_stream = initialize_stream()
+    
+    # Start web server (blocks here)
+    main_logger("🌐 Starting web server on http://localhost:5001")
+    web_thread = threading.Thread(target=lambda: socketio.run(app, host='0.0.0.0', port=5001), daemon=True)
+    web_thread.start()
+
+
+    # Start trading bot in background
+    trading_thread = threading.Thread(target=lambda: bot.trading_logic_loop(ticker_stream), daemon=True)
+    trading_thread.start()
+
+    web_thread.join()
+    trading_thread.join()

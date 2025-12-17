@@ -1,0 +1,9 @@
+3 months before Dec 17 2025 is bullish
+3 months before that is bearish. 
+backtest both periods to see which strats are best in each market and which are robust across both, ensuring no contradictions with results from backtest_greedy_momentum.py
+
+Then manually test the 3 best over both periods to validate. Verify the backtest works by using test_bot which we know works. Get the data and calculate by hand to make sure it does the same thing exactly.
+
+then launch the best 1.
+
+then work on live bot-ing those top 2 or 3 in parallel.

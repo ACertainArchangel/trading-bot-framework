@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Trading Dashboard v2.0 - Vertical Lines</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-template-rows: auto 1fr 250px;
+            gap: 15px;
+            padding: 15px;
+            height: 100vh;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .controls label {
+            font-weight: bold;
+        }
+
+        .controls select {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .controls select:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .controls input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .sidebar {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .stat-card {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .stat-value.positive {
+            color: #4ade80;
+        }
+
+        .stat-value.negative {
+            color: #ef4444;
+        }
+
+        .position-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .position-long {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .position-short {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .trade-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .trade-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .trade-buy {
+            border-left: 3px solid #4ade80;
+        }
+
+        .trade-sell {
+            border-left: 3px solid #ef4444;
+        }
+
+        .chart-container {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #combined-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .log-container {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .log-window {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .log-window h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .log-entry .time {
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .log-entry .message {
+            color: #e0e0e0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-connected {
+            background: #4ade80;
+        }
+
+        .status-disconnected {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Scrollbar styling */
+        .log-window::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-window::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .log-window::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .log-window::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        /* Indicator Dropdown Styling */
+        .indicator-dropdown {
+            position: relative;
+            margin-left: 30px;
+        }
+
+        .indicator-dropdown-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .indicator-dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .indicator-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 5px;
+            background: #1a1f3a;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            min-width: 280px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .indicator-dropdown.active .indicator-dropdown-content {
+            display: block;
+        }
+
+        .indicator-category {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .indicator-category-title {
+            font-size: 12px;
+            color: #667eea;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .indicator-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .indicator-item:hover {
+            padding-left: 5px;
+        }
+
+        .indicator-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .indicator-item label {
+            cursor: pointer;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .indicator-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🚀 Trading Dashboard
+                <span id="status-indicator" class="status-indicator status-disconnected"></span>
+            </h1>
+            <div class="controls">
+                <span id="stream-type" style="margin-right: 20px; padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; font-size: 14px;">LIVE</span>
+                <label for="granularity">Granularity:</label>
+                <select id="granularity">
+                    <option value="1m" selected>1 Minute</option>
+                    <option value="5m">5 Minutes</option>
+                    <option value="15m">15 Minutes</option>
+                    <option value="1h">1 Hour</option>
+                    <option value="6h">6 Hours</option>
+                    <option value="1d">1 Day</option>
+                </select>
+                <span id="candle-count" style="margin-left: 20px; font-weight: bold;">0 candles loaded</span>
+                <span id="progress-info" style="margin-left: 15px; font-size: 14px;"></span>
+                
+                <!-- Indicator Dropdown -->
+                <div class="indicator-dropdown" id="indicator-dropdown">
+                    <button class="indicator-dropdown-btn" onclick="toggleIndicatorDropdown()">
+                        📊 Indicators
+                        <span style="font-size: 10px;">▼</span>
+                    </button>
+                    <div class="indicator-dropdown-content">
+                        <div class="indicator-category">
+                            <div class="indicator-category-title">Moving Averages</div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-9" onchange="updateCharts()">
+                                <label for="ind-ema-9">EMA(9)</label>
+                                <div class="indicator-color" style="background: #ff6b6b;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-12" onchange="updateCharts()">
+                                <label for="ind-ema-12">EMA(12)</label>
+                                <div class="indicator-color" style="background: #ff8787;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-20" onchange="updateCharts()">
+                                <label for="ind-ema-20">EMA(20)</label>
+                                <div class="indicator-color" style="background: #ffa500;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-26" onchange="updateCharts()">
+                                <label for="ind-ema-26">EMA(26)</label>
+                                <div class="indicator-color" style="background: #ffb84d;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-50" onchange="updateCharts()" checked>
+                                <label for="ind-ema-50">EMA(50)</label>
+                                <div class="indicator-color" style="background: #4ecdc4;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-100" onchange="updateCharts()">
+                                <label for="ind-ema-100">EMA(100)</label>
+                                <div class="indicator-color" style="background: #45b7d1;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-ema-200" onchange="updateCharts()" checked>
+                                <label for="ind-ema-200">EMA(200)</label>
+                                <div class="indicator-color" style="background: #667eea;"></div>
+                            </div>
+                        </div>
+                        <div class="indicator-category">
+                            <div class="indicator-category-title">Simple Moving Averages</div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-sma-20" onchange="updateCharts()">
+                                <label for="ind-sma-20">SMA(20)</label>
+                                <div class="indicator-color" style="background: #95e1d3;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-sma-50" onchange="updateCharts()">
+                                <label for="ind-sma-50">SMA(50)</label>
+                                <div class="indicator-color" style="background: #38ada9;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-sma-100" onchange="updateCharts()">
+                                <label for="ind-sma-100">SMA(100)</label>
+                                <div class="indicator-color" style="background: #079992;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-sma-200" onchange="updateCharts()">
+                                <label for="ind-sma-200">SMA(200)</label>
+                                <div class="indicator-color" style="background: #006d77;"></div>
+                            </div>
+                        </div>
+                        <div class="indicator-category">
+                            <div class="indicator-category-title">Bollinger Bands</div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-bb" onchange="updateCharts()">
+                                <label for="ind-bb">Bollinger Bands (20,2)</label>
+                                <div class="indicator-color" style="background: #a8dadc;"></div>
+                            </div>
+                        </div>
+                        <div class="indicator-category">
+                            <div class="indicator-category-title">Oscillators</div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-rsi" onchange="updateCharts()">
+                                <label for="ind-rsi">RSI(14)</label>
+                                <div class="indicator-color" style="background: #f77f00;"></div>
+                            </div>
+                            <div class="indicator-item">
+                                <input type="checkbox" id="ind-stoch" onchange="updateCharts()">
+                                <label for="ind-stoch">Stochastic(14,3)</label>
+                                <div class="indicator-color" style="background: #06ffa5;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <label style="margin-left: 15px; display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="show-avg" checked>
+                    <span style="margin-left: 8px;">Show MACD</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>💼 Position & Balance</h2>
+            
+            <div class="stat-card">
+                <div class="stat-label">Position</div>
+                <div id="position" class="stat-value">-</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Currency Balance</div>
+                <div id="currency" class="stat-value">$0.00</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Asset Balance</div>
+                <div id="asset" class="stat-value">0.00000000</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Currency Baseline</div>
+                <div id="currency-baseline" class="stat-value">$0.00</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Asset Baseline</div>
+                <div id="asset-baseline" class="stat-value">0.00000000</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Current Price</div>
+                <div id="current-price" class="stat-value">$0.00</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Loss Tolerance</div>
+                <div id="loss-tolerance" class="stat-value">0.00%</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Min Profitable Sell</div>
+                <div id="min-sell-price" class="stat-value">-</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Min Profitable Buy</div>
+                <div id="min-buy-price" class="stat-value">-</div>
+            </div>
+
+            <h2 style="margin-top: 20px;">📈 Trade History</h2>
+            <div id="trade-list" class="trade-list"></div>
+        </div>
+
+        <div class="chart-container">
+            <div id="combined-chart" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <div class="log-container">
+            <div class="log-window" id="main-log">
+                <h2>📋 Main Log</h2>
+                <div id="main-log-content"></div>
+            </div>
+
+            <div class="log-window" id="stream-log">
+                <h2>📊 TickerStream Log</h2>
+                <div id="stream-log-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let candleData = [];
+        let streamConfig = {};
+        let tradeMarkers = [];
+        let botState = null;
+        let indicatorData = {};
+
+        // Indicator configuration with colors
+        const indicatorConfig = {
+            'ema_9': { color: '#ff6b6b', name: 'EMA(9)', width: 2 },
+            'ema_12': { color: '#ff8787', name: 'EMA(12)', width: 2 },
+            'ema_20': { color: '#ffa500', name: 'EMA(20)', width: 2 },
+            'ema_26': { color: '#ffb84d', name: 'EMA(26)', width: 2 },
+            'ema_50': { color: '#4ecdc4', name: 'EMA(50)', width: 3 },
+            'ema_100': { color: '#45b7d1', name: 'EMA(100)', width: 2 },
+            'ema_200': { color: '#667eea', name: 'EMA(200)', width: 3 },
+            'sma_20': { color: '#95e1d3', name: 'SMA(20)', width: 2, dash: 'dot' },
+            'sma_50': { color: '#38ada9', name: 'SMA(50)', width: 2, dash: 'dot' },
+            'sma_100': { color: '#079992', name: 'SMA(100)', width: 2, dash: 'dot' },
+            'sma_200': { color: '#006d77', name: 'SMA(200)', width: 2, dash: 'dot' },
+            'bb_upper': { color: '#a8dadc', name: 'BB Upper', width: 1, dash: 'dash' },
+            'bb_middle': { color: '#a8dadc', name: 'BB Middle', width: 1 },
+            'bb_lower': { color: '#a8dadc', name: 'BB Lower', width: 1, dash: 'dash' },
+            'rsi': { color: '#f77f00', name: 'RSI(14)', width: 2 },
+            'stoch_k': { color: '#06ffa5', name: 'Stoch %K', width: 2 },
+            'stoch_d': { color: '#06d6a0', name: 'Stoch %D', width: 2, dash: 'dash' }
+        };
+
+        // Toggle indicator dropdown
+        function toggleIndicatorDropdown() {
+            const dropdown = document.getElementById('indicator-dropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('indicator-dropdown');
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // Fetch indicators from backend
+        async function fetchIndicators() {
+            if (candleData.length < 200) return;
+            
+            try {
+                const response = await fetch('/api/indicators');
+                if (response.ok) {
+                    indicatorData = await response.json();
+                    console.log('Indicators loaded:', Object.keys(indicatorData));
+                }
+            } catch (error) {
+                console.error('Error fetching indicators:', error);
+            }
+        }
+
+        // Fetch stream configuration
+        fetch('/api/config')
+            .then(r => r.json())
+            .then(config => {
+                streamConfig = config;
+                updateStreamInfo(config);
+            });
+
+        function updateStreamInfo(config) {
+            const typeEl = document.getElementById('stream-type');
+            const progressEl = document.getElementById('progress-info');
+            
+            // Update stream type badge
+            if (config.stream_type === 'test') {
+                typeEl.textContent = '🎬 TEST MODE';
+                typeEl.style.background = 'rgba(239, 68, 68, 0.3)';
+                
+                // Show progress if available
+                if (config.progress) {
+                    progressEl.textContent = `Progress: ${config.progress.percent.toFixed(1)}%`;
+                }
+            } else {
+                typeEl.textContent = '🔴 LIVE';
+                typeEl.style.background = 'rgba(74, 222, 128, 0.3)';
+                progressEl.textContent = '';
+            }
+            
+            // Update product in title if different
+            if (config.product_id !== 'BTC-USD') {
+                document.querySelector('h1').textContent = `🚀 Trading Dashboard - ${config.product_id}`;
+            }
+        }
+
+        // Periodically update progress for test streams
+        setInterval(() => {
+            if (streamConfig.stream_type === 'test') {
+                fetch('/api/config')
+                    .then(r => r.json())
+                    .then(config => updateStreamInfo(config));
+            }
+        }, 2000);
+
+        // Connection status
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            document.getElementById('status-indicator').className = 'status-indicator status-connected';
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            document.getElementById('status-indicator').className = 'status-indicator status-disconnected';
+        });
+
+        // Calculate MACD
+        function calculateMACD(closes) {
+            if (closes.length < 35) return null;
+            
+            const calcEMA = (data, period) => {
+                const k = 2 / (period + 1);
+                let ema = [data.slice(0, period).reduce((a, b) => a + b) / period];
+                for (let i = period; i < data.length; i++) {
+                    ema.push(data[i] * k + ema[ema.length - 1] * (1 - k));
+                }
+                return ema;
+            };
+            
+            const ema12 = calcEMA(closes, 12);
+            const ema26 = calcEMA(closes, 26);
+            
+            const offset = 26 - 12;
+            const macd = ema12.slice(offset).map((v, i) => v - ema26[i]);
+            const signal = calcEMA(macd, 9);
+            const histogram = macd.slice(macd.length - signal.length).map((v, i) => v - signal[i]);
+            
+            return { macd, signal, histogram };
+        }
+
+        // Initialize chart
+        async function initChart(data) {
+            candleData = data;
+            await fetchIndicators();
+            updateCharts();
+            updateCandleCount();
+        }
+
+        async function updateCharts() {
+            // Fetch indicators if we have enough data and don't have them yet
+            if (candleData.length >= 200 && Object.keys(indicatorData).length === 0) {
+                await fetchIndicators();
+            }
+            updateCombinedChart();
+        }
+
+        function updateCombinedChart() {
+            if (candleData.length < 35) {
+                document.getElementById('combined-chart').innerHTML = '<div style="text-align:center;padding:20px;color:#a0a0a0;">Loading data...</div>';
+                return;
+            }
+            
+            const chartDiv = document.getElementById('combined-chart');
+            
+            // Preserve current zoom/pan state
+            let currentXRange = null;
+            let currentYRange = null;
+            let currentY2Range = null;
+            if (chartDiv && chartDiv.layout) {
+                currentXRange = chartDiv.layout.xaxis?.range;
+                currentYRange = chartDiv.layout.yaxis?.range;
+                currentY2Range = chartDiv.layout.yaxis2?.range;
+            }
+
+            const times = candleData.map(c => new Date(c.time));
+            
+            // Calculate MACD
+            const closes = candleData.map(c => c.close);
+            const macdData = calculateMACD(closes);
+            
+            if (!macdData) return;
+            
+            // Align MACD times with candles
+            const macdStartIndex = candleData.length - macdData.histogram.length;
+            const macdTimes = times.slice(macdStartIndex);
+            
+            // Candlestick trace (subplot 1)
+            const candleTrace = {
+                x: times,
+                close: candleData.map(c => c.close),
+                high: candleData.map(c => c.high),
+                low: candleData.map(c => c.low),
+                open: candleData.map(c => c.open),
+                type: 'candlestick',
+                name: 'Price',
+                increasing: {line: {color: '#4ade80'}},
+                decreasing: {line: {color: '#ef4444'}},
+                xaxis: 'x',
+                yaxis: 'y'
+            };
+
+            const traces = [candleTrace];
+
+            // Add selected indicators to the main chart
+            if (Object.keys(indicatorData).length > 0) {
+                // Check which indicators are enabled
+                const enabledIndicators = [
+                    { id: 'ema_9', checkbox: 'ind-ema-9' },
+                    { id: 'ema_12', checkbox: 'ind-ema-12' },
+                    { id: 'ema_20', checkbox: 'ind-ema-20' },
+                    { id: 'ema_26', checkbox: 'ind-ema-26' },
+                    { id: 'ema_50', checkbox: 'ind-ema-50' },
+                    { id: 'ema_100', checkbox: 'ind-ema-100' },
+                    { id: 'ema_200', checkbox: 'ind-ema-200' },
+                    { id: 'sma_20', checkbox: 'ind-sma-20' },
+                    { id: 'sma_50', checkbox: 'ind-sma-50' },
+                    { id: 'sma_100', checkbox: 'ind-sma-100' },
+                    { id: 'sma_200', checkbox: 'ind-sma-200' }
+                ];
+
+                enabledIndicators.forEach(ind => {
+                    const checkbox = document.getElementById(ind.checkbox);
+                    if (checkbox && checkbox.checked && indicatorData[ind.id]) {
+                        const config = indicatorConfig[ind.id];
+                        const data = indicatorData[ind.id];
+                        traces.push({
+                            x: data.times.map(t => new Date(t)),
+                            y: data.values,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: config.name,
+                            line: {
+                                color: config.color,
+                                width: config.width,
+                                dash: config.dash || 'solid'
+                            },
+                            hoverinfo: 'y+name',
+                            xaxis: 'x',
+                            yaxis: 'y'
+                        });
+                    }
+                });
+
+                // Handle Bollinger Bands (all three lines together)
+                const bbCheckbox = document.getElementById('ind-bb');
+                if (bbCheckbox && bbCheckbox.checked && indicatorData['bb_upper']) {
+                    ['bb_upper', 'bb_middle', 'bb_lower'].forEach(band => {
+                        const config = indicatorConfig[band];
+                        const data = indicatorData[band];
+                        traces.push({
+                            x: data.times.map(t => new Date(t)),
+                            y: data.values,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: config.name,
+                            line: {
+                                color: config.color,
+                                width: config.width,
+                                dash: config.dash || 'solid'
+                            },
+                            hoverinfo: 'y+name',
+                            xaxis: 'x',
+                            yaxis: 'y',
+                            fill: band === 'bb_lower' ? 'tonexty' : null,
+                            fillcolor: band === 'bb_lower' ? 'rgba(168, 218, 220, 0.1)' : null
+                        });
+                    });
+                }
+            }
+
+            // Add profit zone lines if bot state available
+            if (botState) {
+                if (botState.position === 'long' && botState.min_sell_price) {
+                    traces.push({
+                        x: [times[0], times[times.length - 1]],
+                        y: [botState.min_sell_price, botState.min_sell_price],
+                        mode: 'lines',
+                        name: 'Min Sell Price',
+                        line: {color: '#ef4444', dash: 'dash', width: 2},
+                        hoverinfo: 'y',
+                        xaxis: 'x',
+                        yaxis: 'y'
+                    });
+                }
+                
+                if (botState.position === 'short' && botState.min_buy_price) {
+                    traces.push({
+                        x: [times[0], times[times.length - 1]],
+                        y: [botState.min_buy_price, botState.min_buy_price],
+                        mode: 'lines',
+                        name: 'Min Buy Price',
+                        line: {color: '#4ade80', dash: 'dash', width: 2},
+                        hoverinfo: 'y',
+                        xaxis: 'x',
+                        yaxis: 'y'
+                    });
+                }
+            }
+
+            // MACD traces (subplot 2)
+            const histogramTrace = {
+                x: macdTimes,
+                y: macdData.histogram,
+                type: 'bar',
+                name: 'Histogram',
+                marker: {
+                    color: macdData.histogram.map(v => v >= 0 ? 'rgba(74, 222, 128, 0.5)' : 'rgba(239, 68, 68, 0.5)')
+                },
+                xaxis: 'x2',
+                yaxis: 'y2'
+            };
+
+            const macdTrace = {
+                x: macdTimes,
+                y: macdData.macd.slice(-macdTimes.length),
+                type: 'scatter',
+                mode: 'lines',
+                name: 'MACD',
+                line: {color: '#667eea', width: 2},
+                xaxis: 'x2',
+                yaxis: 'y2'
+            };
+
+            const signalTrace = {
+                x: macdTimes,
+                y: macdData.signal.slice(-macdTimes.length),
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Signal',
+                line: {color: '#f59e0b', width: 2},
+                xaxis: 'x2',
+                yaxis: 'y2'
+            };
+
+            traces.push(histogramTrace);
+            
+            // Only add MACD and Signal lines if checkbox is checked
+            if (document.getElementById('show-avg').checked) {
+                traces.push(macdTrace, signalTrace);
+            }
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: {color: '#e0e0e0'},
+                
+                // First subplot (candlestick) - 70% of height
+                xaxis: {
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    rangeslider: {visible: false},
+                    domain: [0, 1],
+                    anchor: 'y'
+                },
+                yaxis: {
+                    domain: [0.3, 1],
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    title: 'Price (USD)',
+                    anchor: 'x'
+                },
+                
+                // Second subplot (MACD) - 30% of height, shares x-axis
+                xaxis2: {
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    domain: [0, 1],
+                    anchor: 'y2',
+                    matches: 'x'  // Share domain with main chart
+                },
+                yaxis2: {
+                    domain: [0, 0.25],
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    title: 'MACD',
+                    zeroline: true,
+                    zerolinecolor: 'rgba(255,255,255,0.3)',
+                    anchor: 'x2'
+                },
+                
+                margin: {l: 60, r: 50, t: 20, b: 40},
+                showlegend: true,
+                legend: {
+                    x: 0,
+                    y: 1,
+                    bgcolor: 'rgba(26, 31, 58, 0.8)'
+                },
+                dragmode: 'pan',
+                shapes: [],
+                annotations: []
+            };
+
+            // Add grey dashed line at candle 35 (when MACD starts being available for signals)
+            if (candleData.length >= 35) {
+                const macdStartTime = times[34]; // 35th candle (0-indexed)
+                
+                // Line spanning both charts
+                layout.shapes.push({
+                    type: 'line',
+                    x0: macdStartTime,
+                    x1: macdStartTime,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    xref: 'x',
+                    line: {
+                        color: 'rgba(128, 128, 128, 0.5)',
+                        width: 2,
+                        dash: 'dash'
+                    }
+                });
+                
+                // Add annotation
+                layout.annotations.push({
+                    x: macdStartTime,
+                    y: 1,
+                    yref: 'paper',
+                    xref: 'x',
+                    text: 'MACD Ready',
+                    showarrow: false,
+                    yanchor: 'top',
+                    xanchor: 'left',
+                    font: {
+                        size: 11,
+                        color: 'rgba(128, 128, 128, 0.8)'
+                    },
+                    bgcolor: 'rgba(26, 31, 58, 0.8)',
+                    borderpad: 4
+                });
+            }
+
+            // Add vertical lines for trades spanning both subplots
+            if (tradeMarkers.length > 0) {
+                tradeMarkers.forEach(trade => {
+                    const tradeTime = new Date(trade.time);
+                    
+                    // Line on candlestick chart
+                    layout.shapes.push({
+                        type: 'line',
+                        x0: tradeTime,
+                        x1: tradeTime,
+                        y0: 0,
+                        y1: 1,
+                        yref: 'y domain',
+                        xref: 'x',
+                        line: {
+                            color: trade.type === 'BUY' ? '#4ade80' : '#ef4444',
+                            width: 2,
+                            dash: 'dash'
+                        }
+                    });
+                    
+                    // Line on MACD chart
+                    layout.shapes.push({
+                        type: 'line',
+                        x0: tradeTime,
+                        x1: tradeTime,
+                        y0: 0,
+                        y1: 1,
+                        yref: 'y2 domain',
+                        xref: 'x2',
+                        line: {
+                            color: trade.type === 'BUY' ? '#4ade80' : '#ef4444',
+                            width: 2,
+                            dash: 'dash'
+                        }
+                    });
+                    
+                    // Label on candlestick chart
+                    layout.annotations.push({
+                        x: tradeTime,
+                        y: 1,
+                        yref: 'y domain',
+                        xref: 'x',
+                        text: trade.type,
+                        showarrow: false,
+                        font: {
+                            color: trade.type === 'BUY' ? '#4ade80' : '#ef4444',
+                            size: 10,
+                            family: 'monospace'
+                        },
+                        bgcolor: 'rgba(0,0,0,0.7)',
+                        borderpad: 4
+                    });
+                });
+            }
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                scrollZoom: true,
+                doubleClick: 'reset',
+                modeBarButtonsToRemove: ['lasso2d', 'select2d', 'toggleSpikelines']
+            };
+
+            // Check if chart already exists
+            const chartExists = chartDiv && chartDiv.data;
+            
+            if (chartExists && currentXRange) {
+                // Update existing chart data without resetting zoom
+                Plotly.react('combined-chart', traces, layout, config);
+                
+                // Restore zoom state
+                Plotly.relayout(chartDiv, {
+                    'xaxis.range': currentXRange,
+                    'yaxis.range': currentYRange,
+                    'yaxis2.range': currentY2Range
+                });
+            } else {
+                // Create new chart
+                Plotly.newPlot('combined-chart', traces, layout, config);
+            }
+        }
+
+
+        
+        function updateCandleCount() {
+            document.getElementById('candle-count').textContent = `${candleData.length} candles loaded`;
+        }
+
+        // Handle initial data
+        socket.on('initial_data', (data) => {
+            console.log('Received initial data:', data.length, 'candles');
+            initChart(data);
+        });
+        
+        // Handle trade history
+        socket.on('trade_history', (history) => {
+            console.log('Received trade history:', history.length, 'trades');
+            tradeMarkers = history;
+            // Add to trade list
+            history.forEach(trade => addTradeToList(trade));
+            // Redraw charts with markers
+            if (candleData.length > 0) {
+                updateCharts();
+            }
+        });
+
+        // Handle new candle
+        let candlesSinceIndicatorUpdate = 0;
+        socket.on('new_candle', (candle) => {
+            console.log('New candle received:', candle);
+            candleData.push(candle);
+            candlesSinceIndicatorUpdate++;
+            
+            // Refetch indicators every 10 candles to keep them updated
+            if (candlesSinceIndicatorUpdate >= 10 && candleData.length >= 200) {
+                fetchIndicators().then(() => updateCharts());
+                candlesSinceIndicatorUpdate = 0;
+            } else {
+                updateCharts();
+            }
+            
+            updateCandleCount();
+        });
+
+        // Handle bot state updates
+        socket.on('bot_state', (state) => {
+            console.log('Bot state update:', state);
+            botState = state;
+            updateBotDisplay(state);
+            updateCharts(); // Redraw with new profit lines
+        });
+
+        // Handle trade execution
+        socket.on('trade_executed', (trade) => {
+            console.log('Trade executed:', trade);
+            tradeMarkers.push(trade);
+            addTradeToList(trade);
+            updateCharts(); // Redraw with new marker
+        });
+
+        function updateBotDisplay(state) {
+            // Update position
+            const positionEl = document.getElementById('position');
+            positionEl.innerHTML = `<span class="position-badge position-${state.position}">${state.position.toUpperCase()}</span>`;
+            
+            // Update balances
+            document.getElementById('currency').textContent = `$${state.currency.toFixed(2)}`;
+            document.getElementById('asset').textContent = state.asset.toFixed(8);
+            document.getElementById('currency-baseline').textContent = `$${state.currency_baseline.toFixed(2)}`;
+            document.getElementById('asset-baseline').textContent = state.asset_baseline.toFixed(8);
+            
+            // Update current price
+            if (candleData.length > 0) {
+                const currentPrice = candleData[candleData.length - 1].close;
+                document.getElementById('current-price').textContent = `$${currentPrice.toFixed(2)}`;
+            }
+            
+            // Update loss tolerance
+            document.getElementById('loss-tolerance').textContent = `${(state.loss_tolerance * 100).toFixed(2)}%`;
+            
+            // Update min profitable prices
+            if (state.min_sell_price) {
+                const minSellEl = document.getElementById('min-sell-price');
+                minSellEl.textContent = `$${state.min_sell_price.toFixed(2)}`;
+                minSellEl.className = 'stat-value';
+            } else {
+                document.getElementById('min-sell-price').textContent = '-';
+            }
+            
+            if (state.min_buy_price) {
+                const minBuyEl = document.getElementById('min-buy-price');
+                minBuyEl.textContent = `$${state.min_buy_price.toFixed(2)}`;
+                minBuyEl.className = 'stat-value';
+            } else {
+                document.getElementById('min-buy-price').textContent = '-';
+            }
+            
+            // Add profit/loss indication for currency
+            const currencyEl = document.getElementById('currency');
+            if (state.position === 'short' && state.currency > state.currency_baseline) {
+                const profit = state.currency - state.currency_baseline;
+                currencyEl.className = 'stat-value positive';
+                currencyEl.textContent = `$${state.currency.toFixed(2)} (+$${profit.toFixed(2)})`;
+            } else if (state.position === 'short' && state.currency < 1000) {
+                currencyEl.className = 'stat-value negative';
+            }
+        }
+
+        function addTradeToList(trade) {
+            const tradeList = document.getElementById('trade-list');
+            const tradeItem = document.createElement('div');
+            tradeItem.className = `trade-item trade-${trade.type.toLowerCase()}`;
+            
+            const time = new Date(trade.time).toLocaleTimeString();
+            const priceStr = `$${trade.price.toFixed(2)}`;
+            
+            tradeItem.innerHTML = `
+                <strong>${trade.type}</strong> at ${priceStr}<br>
+                <span style="color: #a0a0a0; font-size: 11px;">${time}</span>
+            `;
+            
+            tradeList.insertBefore(tradeItem, tradeList.firstChild);
+            
+            // Keep only last 20 trades
+            while (tradeList.children.length > 20) {
+                tradeList.removeChild(tradeList.lastChild);
+            }
+        }
+
+        // Handle logs
+        socket.on('log_history', (logs) => {
+            console.log('Received log history');
+            // Clear existing logs
+            document.getElementById('main-log-content').innerHTML = '';
+            document.getElementById('stream-log-content').innerHTML = '';
+            
+            // Add main logs
+            logs.main.forEach(log => addLog('main', log));
+            
+            // Add stream logs
+            logs.stream.forEach(log => addLog('stream', log));
+        });
+
+        socket.on('main_log', (log) => {
+            addLog('main', log);
+        });
+
+        socket.on('stream_log', (log) => {
+            addLog('stream', log);
+        });
+
+        function addLog(type, log) {
+            const logContent = document.getElementById(`${type}-log-content`);
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="time">${log.time}</span><span class="message">${log.message}</span>`;
+            logContent.appendChild(logEntry);
+            
+            // Auto-scroll to bottom
+            logContent.parentElement.scrollTop = logContent.parentElement.scrollHeight;
+            
+            // Keep only last 100 entries
+            while (logContent.children.length > 100) {
+                logContent.removeChild(logContent.firstChild);
+            }
+        }
+
+        // Handle granularity change
+        document.getElementById('granularity').addEventListener('change', (e) => {
+            const granularity = e.target.value;
+            console.log('Changing granularity to:', granularity);
+            socket.emit('change_granularity', {granularity: granularity});
+        });
+
+        // Handle show avg checkbox change
+        document.getElementById('show-avg').addEventListener('change', () => {
+            updateCombinedChart();
+        });
+    </script>
+</body>
+</html>

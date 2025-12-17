@@ -1,0 +1,198 @@
+================================================================================
+CONSOLIDATED STRATEGY BACKTEST - SUMMARY
+================================================================================
+
+TEST CONFIGURATION:
+  Starting Capital:   $1,000.00
+  Test Period:        3 months
+  Granularity:        5m
+  Total Candles:      25850
+  Base Strategies:    17
+  Loss Tolerances:    5
+  Total Tests:        85
+  Test Date:          2025-12-17 12:00:47
+  Successful Tests:   85
+  Failed Tests:       0
+
+LOSS TOLERANCE VALUES TESTED:
+  • 0.00%
+  • 0.10%
+  • 0.50%
+  • 1.00%
+  • 2.50%
+
+TOP 30 PERFORMING CONFIGURATIONS:
+==============================================================================================================================================================
+Rank   Strategy                       Loss Tol   APY_USD    APY_BTC    Trades   Win%     Avg$/Trade   Pos   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      Momentum(10, 1.0%)               0.00%     53.70%     64.79%   11        100.0%  $   -25.85  LONG  
+2      Momentum(10, 1.0%)               0.10%     53.70%     64.79%   11        100.0%  $   -25.85  LONG  
+3      EMA(50/200)                      0.00%     48.05%    127.49%   13        100.0%  $   -14.93  LONG  
+4      EMA(50/200)                      0.10%     45.42%    123.44%   13         83.3%  $   -15.61  LONG  
+5      Momentum(10, 1.0%)               0.50%     43.28%     -1.65%   3         100.0%  $  -234.68  LONG  
+6      Bollinger(20, 2.0σ)              1.00%     36.31%     76.73%   129        64.1%  $    -2.40  LONG  
+7      MeanRev(20, -2.0σ)               1.00%     36.31%     76.73%   129        64.1%  $    -2.40  LONG  
+8      EMA(50/200)                      1.00%     34.31%      5.66%   31         33.3%  $   -16.56  LONG  
+9      Momentum(10, 1.0%)               1.00%     29.80%     80.06%   25         50.0%  $    -9.15  LONG  
+10     EMA(12/26)                       0.10%     22.79%     72.47%   23         81.8%  $   -14.60  LONG  
+11     Stochastic(5,3)                  0.50%     17.59%     26.94%   77         50.0%  $    -5.83  LONG  
+12     EMA(50/200)                      0.50%     16.46%     21.99%   15         28.6%  $   -31.56  LONG  
+13     EMA(12/26)                       0.00%     15.48%     33.07%   11        100.0%  $   -42.65  LONG  
+14     Bollinger(20, 1.5σ)              0.10%     14.51%     22.67%   29         71.4%  $   -16.26  LONG  
+15     MeanRev(20, -1.5σ)               0.10%     14.51%     22.67%   29         71.4%  $   -16.26  LONG  
+16     EMA(9/21)                        0.10%     13.45%     30.60%   17         62.5%  $   -27.07  LONG  
+17     Bollinger(20, 1.5σ)              0.50%     13.10%     44.99%   131        55.4%  $    -2.99  LONG  
+18     MeanRev(20, -1.5σ)               0.50%     13.10%     44.99%   131        55.4%  $    -2.99  LONG  
+19     Stochastic(5,3)                  1.00%     12.87%     30.38%   95         51.1%  $    -4.60  LONG  
+20     EMA(9/21)                        0.00%     10.30%     26.96%   9         100.0%  $   -55.52  LONG  
+21     Momentum(10, 2.0%)               1.00%      9.72%    142.70%   9          50.0%  $   -13.31  LONG  
+22     Momentum(10, 2.0%)               2.50%      9.72%    142.70%   9          50.0%  $   -13.31  LONG  
+23     Bollinger(10, 2.0σ)              2.50%      5.06%     -6.71%   129        68.8%  $    -4.34  LONG  
+24     Bollinger(10, 2.0σ)              0.50%      4.97%     11.26%   45         59.1%  $   -11.16  LONG  
+25     Momentum(10, 1.0%)               2.50%      4.87%    170.50%   120        30.0%  $     0.20  SHORT 
+26     RSI(14, 30/70)                   1.00%      4.69%     35.60%   121        56.7%  $    -3.47  LONG  
+27     Stochastic(5,3)                  0.10%      4.21%      2.20%   7          66.7%  $   -87.54  LONG  
+28     Bollinger(20, 2.0σ)              0.00%      4.14%      4.28%   5         100.0%  $  -129.18  LONG  
+29     Bollinger(20, 2.0σ)              0.10%      4.14%      4.28%   5         100.0%  $  -129.18  LONG  
+30     MeanRev(20, -2.0σ)               0.00%      4.14%      4.28%   5         100.0%  $  -129.18  LONG  
+
+================================================================================
+BEST PERFORMING CONFIGURATION:
+================================================================================
+Strategy:           Momentum(10, 1.0%)
+Loss Tolerance:     0.00%
+APY (USD):          53.70%
+APY (BTC):          64.79%
+Value Return:       -12.93%
+Baseline Return:    -12.93%
+Final Baseline:     $870.74
+Starting Value:     $1,000.00
+Current Value:      $870.74
+Total Profit:       $-129.26
+Total Trades:       11
+Win Rate:           100.0% (5 wins, 0 losses)
+Avg Profit/Trade:   $-25.85
+Final Position:     LONG
+
+================================================================================
+BEST CONFIGURATION PER STRATEGY:
+================================================================================
+
+Bollinger(10, 2.0σ):
+  Best Loss Tolerance: 2.50%
+  APY (USD):          5.06%
+  APY (BTC):          -6.71%
+  Trades:             129
+  Win Rate:           68.8%
+
+Bollinger(20, 1.5σ):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          14.51%
+  APY (BTC):          22.67%
+  Trades:             29
+  Win Rate:           71.4%
+
+Bollinger(20, 2.0σ):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          36.31%
+  APY (BTC):          76.73%
+  Trades:             129
+  Win Rate:           64.1%
+
+EMA(12/26):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          22.79%
+  APY (BTC):          72.47%
+  Trades:             23
+  Win Rate:           81.8%
+
+EMA(50/200):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          48.05%
+  APY (BTC):          127.49%
+  Trades:             13
+  Win Rate:           100.0%
+
+EMA(9/21):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          13.45%
+  APY (BTC):          30.60%
+  Trades:             17
+  Win Rate:           62.5%
+
+MACD(12,26,9):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          0.53%
+  APY (BTC):          0.96%
+  Trades:             5
+  Win Rate:           100.0%
+
+MACD(8,17,9):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          1.88%
+  APY (BTC):          2.63%
+  Trades:             5
+  Win Rate:           100.0%
+
+MeanRev(20, -1.5σ):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          14.51%
+  APY (BTC):          22.67%
+  Trades:             29
+  Win Rate:           71.4%
+
+MeanRev(20, -2.0σ):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          36.31%
+  APY (BTC):          76.73%
+  Trades:             129
+  Win Rate:           64.1%
+
+Momentum(10, 1.0%):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          53.70%
+  APY (BTC):          64.79%
+  Trades:             11
+  Win Rate:           100.0%
+
+Momentum(10, 2.0%):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          9.72%
+  APY (BTC):          142.70%
+  Trades:             9
+  Win Rate:           50.0%
+
+RSI(14, 20/80):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          0.91%
+  APY (BTC):          2.63%
+  Trades:             3
+  Win Rate:           100.0%
+
+RSI(14, 30/70):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          4.69%
+  APY (BTC):          35.60%
+  Trades:             121
+  Win Rate:           56.7%
+
+RSI(9, 30/70):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          1.42%
+  APY (BTC):          1.25%
+  Trades:             5
+  Win Rate:           100.0%
+
+Stochastic(14,3):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          2.85%
+  APY (BTC):          2.42%
+  Trades:             9
+  Win Rate:           50.0%
+
+Stochastic(5,3):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          17.59%
+  APY (BTC):          26.94%
+  Trades:             77
+  Win Rate:           50.0%
