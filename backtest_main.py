@@ -35,6 +35,8 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 AGE_DAYS = 180
 DAYS = 180
 
+GRANULARITY = '5m'
+
 def main():
     print("=" * 80)
     print("🧪 MAIN BACKTEST - ALL STRATEGIES")
@@ -57,7 +59,7 @@ def main():
     # Load historical data once (shared across all tests)
     import time
     start_load = time.time()
-    candles = load_historical_data(months=months, granularity='5m', age_days=AGE_DAYS)
+    candles = load_historical_data(months=months, granularity=GRANULARITY, age_days=AGE_DAYS)
     load_time = time.time() - start_load
     print(f"⏱️  Data loading took {load_time:.1f} seconds")
     print()
@@ -377,7 +379,7 @@ def main():
             'test_config': {
                 'starting_currency': starting_currency,
                 'months': months,
-                'granularity': '5m',
+                'granularity': GRANULARITY,
                 'candles': len(candles),
                 'num_strategies': len(base_configs),
                 'loss_tolerances': loss_tolerances,
@@ -399,7 +401,7 @@ def main():
         f.write("TEST CONFIGURATION:\n")
         f.write(f"  Starting Capital:   ${starting_currency:,.2f}\n")
         f.write(f"  Test Period:        {months} months\n")
-        f.write(f"  Granularity:        5m\n")
+        f.write(f"  Granularity:        {GRANULARITY}\n")
         f.write(f"  Total Candles:      {len(candles)}\n")
         f.write(f"  Base Strategies:    {len(base_configs)}\n")
         f.write(f"  Loss Tolerances:    {len(loss_tolerances)}\n")
