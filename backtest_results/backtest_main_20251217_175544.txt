@@ -1,0 +1,109 @@
+================================================================================
+MAIN BACKTEST - ALL STRATEGIES SUMMARY
+================================================================================
+
+TEST CONFIGURATION:
+  Starting Capital:   $1,000.00
+  Test Period:        3 months
+  Granularity:        5m
+  Total Candles:      25850
+  Base Strategies:    57
+  Loss Tolerances:    5
+  Total Tests:        285
+  Test Date:          2025-12-17 17:55:44
+  Elapsed Time:       3327.8 seconds
+  Successful Tests:   285
+  Failed Tests:       0
+
+LOSS TOLERANCE VALUES TESTED:
+  • 0.00%
+  • 0.10%
+  • 0.50%
+  • 1.00%
+  • 2.50%
+
+TOP 50 PERFORMING CONFIGURATIONS:
+====================================================================================================================================================================================
+Rank   Strategy                                 Loss Tol   APY_USD    APY_BTC    Trades   Win%     Avg$/Trade   Idle         Pos   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      Momentum(10, 1.0%)                         0.00%     54.83%     99.12%   11        100.0%  $   -25.01  47d 23h 50m  LONG  
+2      Momentum(10, 1.0%)                         0.10%     54.83%     99.12%   11        100.0%  $   -25.01  47d 23h 50m  LONG  
+3      GreedyMom(p=14, patience=288, margin=1.0%)   0.00%     50.44%    344.69%   11        100.0%  $    13.92  21d 17h 20m  LONG  
+4      GreedyMom(p=14, patience=288, margin=1.0%)   0.10%     50.44%    344.69%   11        100.0%  $    13.92  21d 17h 20m  LONG  
+5      GreedyMom(p=14, patience=288, margin=1.0%)   0.50%     50.44%    272.78%   11        100.0%  $     4.69  21d 17h 20m  LONG  
+6      GreedyMom(p=14, patience=288, margin=1.0%)   1.00%     50.44%    272.78%   11        100.0%  $     4.69  21d 17h 20m  LONG  
+7      Bollinger(20, 2.0σ)                        1.00%     49.56%     93.43%   129        67.2%  $    -2.05  45d 0h 0m    LONG  
+8      MeanRev(20, -2.0σ)                         1.00%     49.56%     93.43%   129        67.2%  $    -2.05  45d 0h 0m    LONG  
+9      EMA(50/200)                                0.00%     49.36%    138.30%   13        100.0%  $   -14.14  35d 16h 0m   LONG  
+10     GreedyEMA(9/21, patience=144, margin=1.0%)   0.00%     43.85%    100.27%   31        100.0%  $    -8.25  44d 15h 50m  LONG  
+11     Momentum(10, 1.0%)                         0.50%     43.47%     18.11%   3         100.0%  $  -232.15  70d 10h 25m  LONG  
+12     EMA(50/200)                                1.00%     37.43%     12.26%   31         33.3%  $   -16.12  69d 6h 45m   LONG  
+13     Momentum(10, 1.0%)                         1.00%     32.15%    119.89%   25         50.0%  $    -8.59  34d 19h 5m   LONG  
+14     EMA(50/200)                                0.10%     32.10%    110.77%   15         71.4%  $   -16.07  35d 16h 0m   LONG  
+15     GreedyEMA(12/26, patience=144, margin=1.0%)   0.00%     31.58%     82.95%   21        100.0%  $   -14.34  44d 15h 45m  LONG  
+16     GreedyEMA(9/21, patience=144, margin=1.0%)   0.10%     27.91%     83.89%   35         82.4%  $    -8.37  44d 3h 10m   LONG  
+17     GreedyEMA(12/26, patience=144, margin=1.0%)   0.10%     26.70%     76.17%   23         90.9%  $   -13.77  44d 15h 45m  LONG  
+18     Bollinger(20, 1.5σ)                        0.50%     24.49%     59.20%   133        60.6%  $    -2.62  45d 0h 5m    LONG  
+19     MeanRev(20, -1.5σ)                         0.50%     24.49%     59.20%   133        60.6%  $    -2.62  45d 0h 5m    LONG  
+20     EMA(9/26)                                  0.50%     22.68%     47.30%   295        30.6%  $    -1.28  49d 7h 5m    LONG  
+21     Stochastic(5,3)                            1.00%     21.86%     40.03%   93         56.5%  $    -4.32  49d 11h 15m  LONG  
+22     Stochastic(5,3)                            0.50%     21.51%     30.48%   79         53.8%  $    -5.46  50d 9h 25m   LONG  
+23     EMA(12/26)                                 0.10%     20.21%     67.15%   23         81.8%  $   -14.77  44d 15h 45m  LONG  
+24     EMA(9/21)                                  0.00%     17.92%     34.63%   13        100.0%  $   -34.43  50d 2h 25m   LONG  
+25     EMA(50/200)                                0.50%     17.73%     28.05%   15         28.6%  $   -30.93  50d 14h 0m   LONG  
+26     Bollinger(20, 1.5σ)                        0.10%     17.67%     25.75%   29         92.9%  $   -15.72  50d 6h 35m   LONG  
+27     MeanRev(20, -1.5σ)                         0.10%     17.67%     25.75%   29         92.9%  $   -15.72  50d 6h 35m   LONG  
+28     GreedyEMA(12/26, patience=144, margin=1.0%)   0.50%     17.61%    195.97%   387        29.0%  $    -0.18  15d 7h 45m   LONG  
+29     EMA(9/26)                                  0.10%     16.57%     66.91%   21         70.0%  $   -16.28  44d 7h 40m   LONG  
+30     EMA(12/26)                                 0.00%     15.53%     31.79%   11        100.0%  $   -42.16  50d 2h 0m    LONG  
+31     EMA(9/26)                                  0.00%     15.28%     60.49%   15        100.0%  $   -24.43  44d 15h 50m  LONG  
+32     Stochastic(14,3)                           1.00%     15.22%     47.35%   117        69.0%  $    -3.25  45d 0h 5m    LONG  
+33     GreedyEMA(9/21, patience=144, margin=1.0%)   0.50%     15.14%     38.62%   309        29.9%  $    -1.30  49d 6h 25m   LONG  
+34     Bollinger(10, 2.0σ)                        2.50%     14.94%      2.19%   129        70.3%  $    -4.05  68d 4h 10m   LONG  
+35     Momentum(10, 1.0%)                         2.50%     14.88%    254.72%   120        31.7%  $     0.59  9d 17h 25m   SHORT 
+36     GreedyMACD(8/17/9, patience=144, margin=1.25%)   0.00%     14.23%     22.42%   17        100.0%  $   -28.16  50d 5h 50m   LONG  
+37     RSI(14, 30/70)                             1.00%     13.93%     47.01%   121        63.3%  $    -3.15  44d 23h 50m  LONG  
+38     GreedyMACD(8/17/9, patience=144, margin=1.0%)   0.00%     13.41%     21.54%   17        100.0%  $   -28.33  50d 5h 50m   LONG  
+39     Stochastic(14,3)                           2.50%     12.83%     -2.60%   151        68.0%  $    -3.58  68d 4h 20m   LONG  
+40     EMA(12/26)                                 0.50%     12.60%    183.36%   387        29.0%  $    -0.23  15d 7h 45m   LONG  
+41     MACD(8,17,9)                               0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+42     GreedyMACD(8/17/9, patience=288, margin=0.5%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+43     GreedyMACD(8/17/9, patience=288, margin=0.75%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+44     GreedyMACD(8/17/9, patience=288, margin=1.0%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+45     GreedyMACD(8/17/9, patience=288, margin=1.25%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+46     GreedyMACD(8/17/9, patience=576, margin=0.5%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+47     GreedyMACD(8/17/9, patience=576, margin=0.75%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+48     GreedyMACD(8/17/9, patience=576, margin=1.0%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+49     GreedyMACD(8/17/9, patience=576, margin=1.25%)   0.00%     12.56%     20.63%   17        100.0%  $   -28.51  50d 5h 50m   LONG  
+50     GreedyMACD(8/17/9, patience=144, margin=0.75%)   0.00%     12.40%     20.46%   17        100.0%  $   -28.55  50d 5h 50m   LONG  
+
+================================================================================
+BEST PERFORMING CONFIGURATION:
+================================================================================
+Strategy:                Momentum(10, 1.0%)
+Loss Tolerance:          0.00%
+
+APY (USD):               54.83%
+APY (BTC):               99.12%
+Value Return:            -12.51%
+Baseline Return (USD):   11.55%
+Baseline Return (BTC):   18.79%
+
+Initial USD Baseline:    $1,000.00
+Final USD Baseline:      $1,115.49
+Initial BTC Baseline:    0.00854461 BTC
+Final BTC Baseline:      0.01015010 BTC
+
+Starting Value:          $1,000.00
+Current Value:           $874.95
+Total Profit:            $-125.05
+Total Trades:            11
+Win Rate:                100.0% (5 wins, 0 losses)
+Avg Profit/Trade:        $-25.01
+Longest Idle Time:       47d 23h 50m
+Final Position:          LONG
+Final Position:     LONG
+
+================================================================================
+BEST CONFIGURATION PER STRATEGY:
+================================================================================

@@ -17,7 +17,7 @@ import sys
 from io import StringIO
 
 
-def load_historical_data(months: int = 3, granularity: str = '5m', product_id: str = 'BTC-USD') -> List:
+def load_historical_data(months: int = 3, granularity: str = '5m', product_id: str = 'BTC-USD', age_days: int = 0) -> List:
     """
     Load historical data to be shared across all tests.
     
@@ -25,21 +25,25 @@ def load_historical_data(months: int = 3, granularity: str = '5m', product_id: s
         months: Number of months of historical data to load
         granularity: Candle interval ('1m', '5m', '15m', '1h', '1d')
         product_id: Trading pair (e.g., 'BTC-USD')
+        age_days: How many days in the past the period should END (0 = now, 90 = 90 days ago)
     
     Returns:
         List of candles [timestamp, low, high, open, close, volume]
     """
     now = datetime.now(timezone.utc)
-    start_date = now - timedelta(days=30 * months)
+    end_date = now - timedelta(days=age_days)
+    start_date = end_date - timedelta(days=30 * months)
     
     print(f"📦 Loading {months} months of {granularity} candles for {product_id}...")
-    print(f"📅 Date range: {start_date.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}")
+    print(f"📅 Date range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    if age_days > 0:
+        print(f"📍 Test period ends {age_days} days ago")
     
     api = CoinbaseDataFetcher(product_id=product_id)
     candles = api.fetch_candles(
         granularity=granularity,
         start=start_date,
-        end=now
+        end=end_date
     )
     
     print(f"✅ Loaded {len(candles)} candles")
@@ -48,11 +52,9 @@ def load_historical_data(months: int = 3, granularity: str = '5m', product_id: s
 
 def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: int, 
                      rejected_buys: int, rejected_sells: int, 
-                     initial_usd: float, last_usd_held: float, 
-                     initial_btc: float, cycle_start_value: float,
-                     starting_currency: float, months: int) -> Dict[str, Any]:
+                     granularity: str, starting_currency: float, months: int) -> Dict[str, Any]:
     """
-    Calculate comprehensive backtest metrics.
+    Calculate comprehensive backtest metrics using dual baseline system.
     
     Args:
         bot: The trading bot instance
@@ -62,10 +64,7 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
         losses: Number of losing cycles
         rejected_buys: Number of rejected buy attempts
         rejected_sells: Number of rejected sell attempts
-        initial_usd: Starting USD amount
-        last_usd_held: Last USD held before going LONG
-        initial_btc: Starting BTC amount (or theoretical)
-        cycle_start_value: USD value at start of current cycle
+        granularity: Candle interval ('1m', '5m', '15m', '1h', '1d')
         starting_currency: Initial starting currency
         months: Time period in months
     
@@ -75,45 +74,73 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
     years = months / 12
     current_price = candles[-1][4]
     
-    # If we never bought BTC, calculate theoretical initial BTC
-    if initial_btc is None or initial_btc == 0:
-        initial_btc = starting_currency / candles[35][4] if len(candles) > 35 else starting_currency / current_price
+    # Get final baseline values from bot (dual baseline system)
+    final_usd_baseline = bot.currency_baseline
+    final_crypto_baseline = bot.asset_baseline
+    initial_usd_baseline = bot.initial_usd_baseline
+    initial_crypto_baseline = bot.initial_crypto_baseline
     
-    # Calculate final values based on position
+    # Calculate current value based on position
     if bot.position == "short":
-        # Ending in USD: use actual USD
-        final_usd = bot.currency
-        final_baseline_usd = bot.currency_baseline
         current_value = bot.currency
-        final_btc = bot.asset_baseline
     else:
-        # Ending in BTC: use the LAST USD amount we held (before buying BTC)
-        final_usd = last_usd_held
-        final_baseline_usd = bot.asset_baseline * current_price
         current_value = bot.asset * current_price
-        final_btc = bot.asset
     
-    # Calculate APY - always use USD for APY_USD and BTC for APY_BTC
-    apy_usd = ((final_usd / initial_usd) ** (1 / years) - 1) * 100 if years > 0 else 0.0
-    apy_btc = ((final_btc / initial_btc) ** (1 / years) - 1) * 100 if initial_btc > 0 and years > 0 else 0.0
+    # Calculate APY using dual baselines - use safe calculation to avoid overflow
+    import math
+    apy_usd = 0.0
+    apy_btc = 0.0
+    if initial_usd_baseline > 0 and years > 0:
+        try:
+            ratio = final_usd_baseline / initial_usd_baseline
+            if ratio > 0:
+                apy_usd = (math.exp(math.log(ratio) / years) - 1) * 100
+        except (OverflowError, ValueError):
+            apy_usd = 0.0
+    
+    if initial_crypto_baseline > 0 and years > 0:
+        try:
+            ratio = final_crypto_baseline / initial_crypto_baseline
+            if ratio > 0:
+                apy_btc = (math.exp(math.log(ratio) / years) - 1) * 100
+        except (OverflowError, ValueError):
+            apy_btc = 0.0
     
     # Calculate return percentages
-    starting_baseline_usd = starting_currency
-    value_return = ((current_value - starting_baseline_usd) / starting_baseline_usd) * 100
-    baseline_return = ((final_baseline_usd - starting_baseline_usd) / starting_baseline_usd) * 100
+    value_return = ((current_value - initial_usd_baseline) / initial_usd_baseline) * 100
+    baseline_return_usd = ((final_usd_baseline - initial_usd_baseline) / initial_usd_baseline) * 100
+    baseline_return_btc = ((final_crypto_baseline - initial_crypto_baseline) / initial_crypto_baseline) * 100
     
     # Calculate win rate based on complete cycles
     complete_cycles = wins + losses
     win_rate = (wins / complete_cycles * 100) if complete_cycles > 0 else 0
     
     # Calculate average profit per complete cycle
-    total_profit = current_value - starting_baseline_usd
+    total_profit = current_value - initial_usd_baseline
     avg_profit = total_profit / complete_cycles if complete_cycles > 0 else 0
     
+    # Calculate longest idle time
+    granularity_minutes = {'1m': 1, '5m': 5, '15m': 15, '1h': 60, '6h': 360, '1d': 1440}.get(granularity, 5)
+    max_idle_minutes = bot.max_idle_candles * granularity_minutes
+    idle_days = max_idle_minutes // 1440
+    idle_hours = (max_idle_minutes % 1440) // 60
+    idle_mins = max_idle_minutes % 60
+    
+    if idle_days > 0:
+        longest_idle_str = f"{idle_days}d {idle_hours}h {idle_mins}m"
+    elif idle_hours > 0:
+        longest_idle_str = f"{idle_hours}h {idle_mins}m"
+    else:
+        longest_idle_str = f"{idle_mins}m"
+    
     return {
-        'final_baseline': final_baseline_usd,
+        'initial_usd_baseline': initial_usd_baseline,
+        'initial_crypto_baseline': initial_crypto_baseline,
+        'final_usd_baseline': final_usd_baseline,
+        'final_crypto_baseline': final_crypto_baseline,
         'current_value': current_value,
-        'baseline_return_pct': baseline_return,
+        'baseline_return_usd_pct': baseline_return_usd,
+        'baseline_return_btc_pct': baseline_return_btc,
         'value_return_pct': value_return,
         'apy_usd': apy_usd,
         'apy_btc': apy_btc,
@@ -125,6 +152,9 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
         'win_rate': win_rate,
         'avg_profit_per_trade': avg_profit,
         'final_position': bot.position,
+        'longest_idle_time': longest_idle_str,
+        'max_idle_candles': bot.max_idle_candles,
+        'max_idle_minutes': max_idle_minutes,
         'success': True
     }
 
@@ -132,7 +162,7 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
 def run_single_backtest(strategy_class: Type[Strategy], strategy_params: Dict[str, Any],
                        candles: List, starting_currency: float, loss_tolerance: float,
                        fee_rate: float = 0.025, pair: str = "BTC-USD",
-                       min_candles: int = 35, months: int = 3) -> Dict[str, Any]:
+                       min_candles: int = 35, months: int = 3, granularity: str = '5m') -> Dict[str, Any]:
     """
     Run a single backtest with a specific strategy and parameters.
     
@@ -155,31 +185,30 @@ def run_single_backtest(strategy_class: Type[Strategy], strategy_params: Dict[st
         old_stdout = sys.stdout
         sys.stdout = StringIO()
         
-        # Create interface and bot
-        interface = PaperTradingInterface()
+        # Get initial price from early candles for baseline calculation
+        initial_price = candles[min_candles][4] if len(candles) > min_candles else candles[0][4]
+        
+        # Create interface with starting balance, then create bot
+        interface = PaperTradingInterface(starting_currency=starting_currency, starting_asset=0.0)
         bot = Bot(
             interface=interface,
             strategy=strategy_class,
             pair=pair,
-            starting_currency=starting_currency,
-            starting_asset=0.0,
             fee_rate=fee_rate,
             fee_in_percent=True,
             loss_tolerance=loss_tolerance,
-            strategy_params=strategy_params
+            strategy_params=strategy_params,
+            initial_price=initial_price
         )
         
         # Verify configuration
-        if bot.loss_tolerance != loss_tolerance:
-            sys.stdout = old_stdout
-            raise ValueError(f"Bot loss_tolerance mismatch: expected {loss_tolerance}, got {bot.loss_tolerance}")
-        
         # Track metrics
         trades = 0
         wins = 0
         losses = 0
         rejected_buys = 0
         rejected_sells = 0
+        cycle_start_value = starting_currency
         cycle_start_value = starting_currency
         initial_usd = starting_currency
         last_usd_held = starting_currency
@@ -191,15 +220,17 @@ def run_single_backtest(strategy_class: Type[Strategy], strategy_params: Dict[st
             candle = candles[i]
             window = candles[:i+1]
             current_price = candle[4]
+            # Update idle time tracking (mimics bot's _check_signals_on_new_candle)
+            bot.candles_since_last_trade += 1
+            if bot.candles_since_last_trade > bot.max_idle_candles:
+                bot.max_idle_candles = bot.candles_since_last_trade
             
             # Check buy signal
             if bot.position == "short" and bot.buy_signal(window):
                 cycle_start_value = bot.currency
-                last_usd_held = bot.currency
                 if bot.execute_buy(current_price):
                     trades += 1
-                    if initial_btc is None:
-                        initial_btc = bot.asset
+                    # Note: bot.execute_buy already resets candles_since_last_trade
                 else:
                     rejected_buys += 1
             
@@ -212,18 +243,18 @@ def run_single_backtest(strategy_class: Type[Strategy], strategy_params: Dict[st
                         wins += 1
                     else:
                         losses += 1
+                    # Note: bot.execute_sell already resets candles_since_last_trade
                 else:
+                    rejected_sells += 1
                     rejected_sells += 1
         
         # Restore stdout
         sys.stdout = old_stdout
-        
         # Calculate metrics
         metrics = calculate_metrics(
             bot, candles, trades, wins, losses,
             rejected_buys, rejected_sells,
-            initial_usd, last_usd_held, initial_btc,
-            cycle_start_value, starting_currency, months
+            granularity, starting_currency, months
         )
         
         # Add strategy info

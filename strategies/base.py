@@ -5,6 +5,28 @@ class Strategy(ABC):
     """
     Abstract base class for trading strategies.
     All strategies must implement buy_signal() and sell_signal() methods.
+    
+    Performance Tracking (Dual Baseline System):
+    --------------------------------------------
+    The bot tracks performance using TWO independent baselines:
+    
+    1. USD Baseline (currency_baseline):
+       - Tracks the USD value that would result from perfect buy-low/sell-high trading
+       - Updated on EVERY trade regardless of position
+       - Used to calculate USD APY
+    
+    2. BTC Baseline (asset_baseline):
+       - Tracks the BTC amount that would result from perfect trading
+       - Updated on EVERY trade regardless of position
+       - Used to calculate BTC APY
+    
+    APY Calculation:
+    ----------------
+    - APY is calculated using BASELINES, not raw balances (currency/asset)
+    - USD APY = ((currency_baseline / initial_usd_baseline)^(1/years) - 1) * 100
+    - BTC APY = ((asset_baseline / initial_crypto_baseline)^(1/years) - 1) * 100
+    - This reflects trading performance independent of market movement
+    - Both baselines are tracked from bot start and updated on every trade
     """
     
     def __init__(self, bot):
@@ -47,6 +69,9 @@ class Strategy(ABC):
         Check if buying at current price would exceed asset baseline (with loss tolerance).
         This prevents the bot from signaling trades that will be rejected anyway.
         
+        Note: Uses asset_baseline (BTC baseline), not raw asset balance.
+        The baseline represents the target BTC amount from optimal trading.
+        
         Args:
             current_price: Current asset price
             
@@ -67,6 +92,9 @@ class Strategy(ABC):
         """
         Check if selling at current price would exceed currency baseline (with loss tolerance).
         This prevents the bot from signaling trades that will be rejected anyway.
+        
+        Note: Uses currency_baseline (USD baseline), not raw currency balance.
+        The baseline represents the target USD amount from optimal trading.
         
         Args:
             current_price: Current asset price

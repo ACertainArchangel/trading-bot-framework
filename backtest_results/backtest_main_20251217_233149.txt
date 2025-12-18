@@ -1,0 +1,109 @@
+================================================================================
+MAIN BACKTEST - ALL STRATEGIES SUMMARY
+================================================================================
+
+TEST CONFIGURATION:
+  Starting Capital:   $1,000.00
+  Test Period:        6 months
+  Granularity:        5m
+  Total Candles:      51840
+  Base Strategies:    57
+  Loss Tolerances:    5
+  Total Tests:        285
+  Test Date:          2025-12-17 23:31:49
+  Elapsed Time:       15558.0 seconds
+  Successful Tests:   285
+  Failed Tests:       0
+
+LOSS TOLERANCE VALUES TESTED:
+  • 0.00%
+  • 0.10%
+  • 0.50%
+  • 1.00%
+  • 2.50%
+
+TOP 50 PERFORMING CONFIGURATIONS:
+====================================================================================================================================================================================
+Rank   Strategy                                 Loss Tol   APY_USD    APY_BTC    Trades   Win%     Avg$/Trade   Idle         Pos   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      GreedyMACD(5/13/5, patience=144, margin=1.25%)   0.10%     70.95%    114.59%   250        64.8%  $     2.46  61d 3h 40m   SHORT 
+2      GreedyMACD(5/13/5, patience=288, margin=1.25%)   0.10%     70.95%    114.59%   250        64.8%  $     2.46  61d 3h 40m   SHORT 
+3      GreedyMACD(5/13/5, patience=144, margin=1.0%)   0.10%     70.27%    113.74%   250        64.8%  $     2.44  61d 3h 40m   SHORT 
+4      GreedyMACD(5/13/5, patience=288, margin=1.0%)   0.10%     70.27%    113.74%   250        64.8%  $     2.44  61d 3h 40m   SHORT 
+5      GreedyMACD(5/13/5, patience=144, margin=0.5%)   0.10%     69.12%    112.30%   250        64.8%  $     2.40  61d 3h 40m   SHORT 
+6      GreedyMACD(5/13/5, patience=144, margin=0.75%)   0.10%     69.12%    112.30%   250        64.8%  $     2.40  61d 3h 40m   SHORT 
+7      GreedyMACD(5/13/5, patience=288, margin=0.5%)   0.10%     69.12%    112.30%   250        64.8%  $     2.40  61d 3h 40m   SHORT 
+8      GreedyMACD(5/13/5, patience=288, margin=0.75%)   0.10%     69.12%    112.30%   250        64.8%  $     2.40  61d 3h 40m   SHORT 
+9      GreedyMACD(5/13/5, patience=576, margin=1.25%)   0.10%     68.44%    111.44%   250        64.8%  $     2.38  61d 3h 40m   SHORT 
+10     GreedyMACD(5/13/5, patience=576, margin=0.5%)   0.10%     67.77%    110.60%   250        64.8%  $     2.36  61d 3h 40m   SHORT 
+11     GreedyMACD(5/13/5, patience=576, margin=0.75%)   0.10%     67.77%    110.60%   250        64.8%  $     2.36  61d 3h 40m   SHORT 
+12     GreedyMACD(5/13/5, patience=576, margin=1.0%)   0.10%     67.77%    110.60%   250        64.8%  $     2.36  61d 3h 40m   SHORT 
+13     Bollinger(20, 2.0σ)                        0.00%     61.36%     61.44%   122       100.0%  $     4.43  60d 1h 45m   SHORT 
+14     MeanRev(20, -2.0σ)                         0.00%     61.36%     61.44%   122       100.0%  $     4.43  60d 1h 45m   SHORT 
+15     Stochastic(5,3)                            0.50%     60.84%     51.38%   178        66.3%  $     3.01  75d 9h 20m   SHORT 
+16     Bollinger(20, 1.5σ)                        1.00%     59.97%     25.84%   363        69.6%  $     1.21  97d 13h 40m  LONG  
+17     MeanRev(20, -1.5σ)                         1.00%     59.97%     25.84%   363        69.6%  $     1.21  97d 13h 40m  LONG  
+18     GreedyMACD(12/26/9, patience=288, margin=0.5%)   0.10%     58.63%     52.83%   92         76.1%  $     5.64  47d 13h 25m  SHORT 
+19     GreedyMACD(12/26/9, patience=576, margin=0.5%)   0.10%     58.63%     52.83%   92         76.1%  $     5.64  47d 13h 25m  SHORT 
+20     GreedyMACD(12/26/9, patience=288, margin=0.75%)   0.10%     56.51%     50.79%   92         73.9%  $     5.46  47d 13h 25m  SHORT 
+21     GreedyMACD(12/26/9, patience=288, margin=1.0%)   0.10%     56.51%     50.79%   92         73.9%  $     5.46  47d 13h 25m  SHORT 
+22     GreedyMACD(12/26/9, patience=576, margin=0.75%)   0.10%     56.51%     50.79%   92         73.9%  $     5.46  47d 13h 25m  SHORT 
+23     GreedyMACD(12/26/9, patience=576, margin=1.0%)   0.10%     56.51%     50.79%   92         73.9%  $     5.46  47d 13h 25m  SHORT 
+24     GreedyMACD(12/26/9, patience=576, margin=1.25%)   0.10%     56.51%     50.79%   92         73.9%  $     5.46  47d 13h 25m  SHORT 
+25     GreedyEMA(12/26, patience=144, margin=1.0%)   0.50%     55.85%     87.94%   338        31.4%  $     1.47  61d 2h 40m   SHORT 
+26     RSI(14, 30/70)                             0.10%     54.85%     58.29%   136        89.7%  $     3.59  60d 1h 55m   SHORT 
+27     GreedyMACD(12/26/9, patience=288, margin=1.25%)   0.10%     54.85%     49.19%   92         73.9%  $     5.31  47d 13h 25m  SHORT 
+28     GreedyMACD(12/26/9, patience=144, margin=1.25%)   0.10%     54.46%     48.82%   92         73.9%  $     5.28  47d 13h 25m  SHORT 
+29     GreedyMACD(12/26/9, patience=144, margin=0.5%)   0.10%     54.29%     48.65%   92         76.1%  $     5.26  47d 13h 25m  SHORT 
+30     Bollinger(10, 2.0σ)                        1.00%     54.19%     21.16%   225        67.0%  $     1.75  97d 6h 50m   LONG  
+31     GreedyEMA(9/21, patience=144, margin=1.0%)   0.00%     54.18%     55.79%   62        100.0%  $     7.80  59d 22h 55m  SHORT 
+32     Momentum(10, 2.0%)                         1.00%     54.11%     22.18%   10         80.0%  $    48.28  114d 4h 20m  SHORT 
+33     GreedyMACD(12/26/9, patience=144, margin=1.0%)   0.10%     54.05%     48.42%   92         73.9%  $     5.24  47d 13h 25m  SHORT 
+34     GreedyMACD(12/26/9, patience=144, margin=0.75%)   0.10%     53.36%     47.76%   92         73.9%  $     5.18  47d 13h 25m  SHORT 
+35     MACD(12,26,9)                              0.00%     52.93%     47.34%   70         97.1%  $     6.76  59d 23h 20m  SHORT 
+36     GreedyMACD(12/26/9, patience=288, margin=1.25%)   0.00%     52.93%     47.34%   70         97.1%  $     6.76  59d 23h 20m  SHORT 
+37     GreedyMACD(12/26/9, patience=576, margin=1.25%)   0.00%     52.93%     47.34%   70         97.1%  $     6.76  59d 23h 20m  SHORT 
+38     GreedyMACD(12/26/9, patience=144, margin=0.75%)   0.00%     52.92%     47.33%   70         97.1%  $     6.76  59d 22h 5m   SHORT 
+39     GreedyMACD(12/26/9, patience=288, margin=0.75%)   0.00%     52.92%     47.33%   70         97.1%  $     6.76  59d 22h 5m   SHORT 
+40     GreedyMACD(12/26/9, patience=576, margin=0.5%)   0.00%     52.92%     47.33%   70         97.1%  $     6.76  59d 22h 5m   SHORT 
+41     GreedyMACD(12/26/9, patience=576, margin=0.75%)   0.00%     52.92%     47.33%   70         97.1%  $     6.76  59d 22h 5m   SHORT 
+42     RSI(9, 30/70)                              1.00%     52.69%    129.92%   472        70.8%  $     1.00  72d 10h 55m  SHORT 
+43     GreedyMACD(12/26/9, patience=144, margin=0.5%)   0.00%     52.66%     47.09%   70         97.1%  $     6.73  59d 22h 5m   SHORT 
+44     GreedyMACD(12/26/9, patience=288, margin=0.5%)   0.00%     52.61%     47.04%   70         97.1%  $     6.72  59d 22h 5m   SHORT 
+45     GreedyMACD(12/26/9, patience=144, margin=1.25%)   0.00%     52.55%     46.97%   70         97.1%  $     6.72  59d 23h 20m  SHORT 
+46     MACD(12,26,9)                              0.10%     52.14%     46.58%   90         73.3%  $     5.19  47d 14h 25m  SHORT 
+47     GreedyEMA(9/21, patience=144, margin=1.0%)   0.10%     52.12%     53.72%   76         81.6%  $     6.14  59d 22h 55m  SHORT 
+48     Stochastic(14,3)                           0.00%     51.80%     50.53%   112        98.2%  $     4.14  60d 3h 5m    SHORT 
+49     Stochastic(5,3)                            0.00%     50.11%     46.85%   90        100.0%  $     5.00  59d 23h 20m  SHORT 
+50     Momentum(10, 2.0%)                         0.00%     49.23%     18.31%   8         100.0%  $    55.40  120d 23h 0m  SHORT 
+
+================================================================================
+BEST PERFORMING CONFIGURATION:
+================================================================================
+Strategy:                GreedyMACD(5/13/5, patience=144, margin=1.25%)
+Loss Tolerance:          0.10%
+
+APY (USD):               70.95%
+APY (BTC):               114.59%
+Value Return:            30.75%
+Baseline Return (USD):   30.75%
+Baseline Return (BTC):   46.49%
+
+Initial USD Baseline:    $1,000.00
+Final USD Baseline:      $1,307.48
+Initial BTC Baseline:    0.01049525 BTC
+Final BTC Baseline:      0.01537449 BTC
+
+Starting Value:          $1,000.00
+Current Value:           $1,307.48
+Total Profit:            $307.48
+Total Trades:            250
+Win Rate:                64.8% (81 wins, 44 losses)
+Avg Profit/Trade:        $2.46
+Longest Idle Time:       61d 3h 40m
+Final Position:          SHORT
+Final Position:     SHORT
+
+================================================================================
+BEST CONFIGURATION PER STRATEGY:
+================================================================================

@@ -235,12 +235,11 @@ def run_live_bot(args):
     # Determine starting position - bot can only start with one or the other
     if starting_btc > 0.0001:  # Has meaningful BTC (> ~$8 worth)
         main_logger(f"🔵 Starting LONG (holding BTC)")
-        start_currency = 0
-        start_asset = starting_btc
     else:
         main_logger(f"🟢 Starting SHORT (holding USD)")
-        start_currency = starting_usd
-        start_asset = 0
+    
+    # Note: Interface already has correct balances from fetch_exchange_balance calls
+    # The Bot will sync from the interface, so we don't pass starting balances anymore
     
     # Create bot with specified strategy
     main_logger("🤖 Initializing trading bot...")
@@ -248,8 +247,6 @@ def run_live_bot(args):
         interface=interface,
         strategy=strategy_class,
         pair="BTC-USD",
-        starting_currency=start_currency,
-        starting_asset=start_asset,
         fee_rate=args.fee_rate,
         fee_in_percent=False,  # Already in decimal form
         loss_tolerance=args.loss_tolerance,
@@ -307,6 +304,33 @@ def run_live_bot(args):
     if historical_candles and len(historical_candles) > len(ticker_stream._candles):
         ticker_stream._candles = historical_candles
         main_logger(f"✅ Stream pre-populated with {len(historical_candles)} candles")
+    
+    # Get initial price from historical data or fetch current price
+    initial_price = None
+    candles = ticker_stream.get_candles()
+    if candles and len(candles) > 0:
+        initial_price = candles[0][4]  # Close price of first candle
+    else:
+        # Fetch current market price as fallback
+        try:
+            current_price_data = interface.get_current_price('BTC-USD')
+            initial_price = float(current_price_data)
+            main_logger(f"💵 Current market price: ${initial_price:.2f}")
+        except:
+            main_logger("⚠️ Could not fetch initial price - baselines may be inaccurate")
+    
+    if initial_price:
+        bot.initial_price = initial_price
+        main_logger(f"💵 Initial price set: ${initial_price:.2f}")
+        # Recalculate baselines if they weren't set properly
+        if bot.initial_crypto_baseline == 0.0 and bot.position == "short":
+            bot.asset_baseline = bot.currency / initial_price
+            bot.initial_crypto_baseline = bot.asset_baseline
+            main_logger(f"✓ Crypto baseline calculated: {bot.initial_crypto_baseline:.8f} BTC")
+        elif bot.initial_usd_baseline == 0.0 and bot.position == "long":
+            bot.currency_baseline = bot.asset * initial_price
+            bot.initial_usd_baseline = bot.currency_baseline
+            main_logger(f"✓ USD baseline calculated: ${bot.initial_usd_baseline:.2f}")
     
     time.sleep(1)
     main_logger("✅ Live stream ready - monitoring for new candles")

@@ -7,72 +7,115 @@ from interfaces.CoinbaseInterface import CoinbaseInterface
 from interfaces.PaperTradingInterface import PaperTradingInterface
 from strategies import Strategy
 
-SYNC_INTERFACE_WITH_BOT = True  # If True, the interface will sync its state with the bot on startup, use this for things like paper trading
-SYNC_BOT_WITH_INTERFACE = False   # If True, the bot will sync its state with the interface on startup, use this for most live trading
-
-assert SYNC_INTERFACE_WITH_BOT ^ SYNC_BOT_WITH_INTERFACE, "Exactly one of SYNC_INTERFACE_WITH_BOT or SYNC_BOT_WITH_INTERFACE can be True and not more than one or less."
-
 # Global lock to prevent concurrent trade execution
 _trade_lock = threading.Lock()
 
 class Bot:
-    def __init__(self, interface, strategy: Strategy = None, pair: str = "BTC-USD", starting_currency: float = 1000.0, starting_asset: float = 0.0, fee_rate: float = 0.0065, fee_in_percent: bool = True, agression: float = 1, loss_tolerance: float = 0.0, SYNC_INTERFACE_WITH_BOT: bool = SYNC_INTERFACE_WITH_BOT, SYNC_BOT_WITH_INTERFACE: bool = SYNC_BOT_WITH_INTERFACE, currency_to_give_bot = None, asset_to_give_bot = None, strategy_params: dict = None):
-
-        assert SYNC_INTERFACE_WITH_BOT ^ SYNC_BOT_WITH_INTERFACE, "Exactly one of SYNC_INTERFACE_WITH_BOT or SYNC_BOT_WITH_INTERFACE can be True and not more than one or less than one."
+    """
+    Trading bot that executes strategies based on market data.
+    
+    The interface is the single source of truth for balances and position.
+    The bot syncs its state from the interface on initialization.
+    
+    Args:
+        interface: Trading interface (must have currency, asset, position attributes)
+        strategy: Strategy class or instance (can be set later if None)
+        pair: Trading pair (e.g., "BTC-USD")
+        fee_rate: Trading fee rate
+        fee_in_percent: If True, fee_rate is in percent (e.g., 0.65 for 0.65%)
+        loss_tolerance: Maximum acceptable loss before forced sell (as decimal, e.g., 0.01 for 1%)
+        strategy_params: Parameters to pass to strategy constructor
+        initial_price: Initial market price for baseline calculations (optional)
+    """
+    def __init__(self, interface, strategy: Strategy = None, pair: str = "BTC-USD", 
+                 fee_rate: float = 0.0065, fee_in_percent: bool = True, 
+                 loss_tolerance: float = 0.0, strategy_params: dict = None, 
+                 initial_price: float = None):
         
-        self.strategy = strategy  # Strategy can be set later if None
-        self.strategy_params = strategy_params or {}  # Store strategy params for later use
+        self.interface = interface
+        self.pair = pair
+        self.strategy = strategy
+        self.strategy_params = strategy_params or {}
+        self.initial_price = initial_price
+        self.fee_rate = fee_rate if not fee_in_percent else fee_rate / 100.0
+        self.loss_tolerance = loss_tolerance
+        
+        # Connect to exchange and sync bot state from interface
+        main_logger("🔌 Connecting to exchange...")
+        interface.connect_to_exchange()
+        
+        # Validate interface has a clear position
+        main_logger("🔍 Validating interface state...")
+        interface.validate_position()
+        
+        # Sync bot balances and position from interface (interface is source of truth)
+        self.currency = float(interface.currency)
+        self.asset = float(interface.asset)
+        self.position = interface.position
+        
+        # Verify position matches balances
+        if self.asset > 0 and self.currency > 0:
+            raise ValueError(
+                f"Bot cannot start with both currency ({self.currency}) and asset ({self.asset}). "
+                "Must have EITHER currency (SHORT) OR asset (LONG), not both."
+            )
+        if self.asset == 0 and self.currency == 0:
+            raise ValueError(
+                "Bot cannot start with zero balance. Interface must provide either currency or asset."
+            )
+        if self.position not in ["long", "short"]:
+            raise ValueError(
+                f"Invalid position '{self.position}'. Must be 'long' or 'short'."
+            )
+        
+        # Log initialization
+        main_logger(f"🤖 Bot initialized and synced with interface")
+        main_logger(f"   Interface: {interface}")
+        main_logger(f"   Currency: {self.currency:.2f} {self.pair.split('-')[1]}")
+        main_logger(f"   Asset: {self.asset:.8f} {self.pair.split('-')[0]}")
+        main_logger(f"   Position: {self.position.upper()}")
+        main_logger(f"⚙️  Trading parameters:")
+        main_logger(f"   Fee Rate: {self.fee_rate*100:.4f}%")
+        main_logger(f"   Loss Tolerance: {self.loss_tolerance*100:.2f}%")
+        
+        # Verify exchange sync
+        interface.assert_exchange_sync(self)
 
-        if SYNC_INTERFACE_WITH_BOT:
-            if starting_asset != 0.0 and starting_currency != 0.0:
-                raise ValueError("Bot can start with either currency or asset, not both. If you want to start with both, try making two separate bots.")
-
-            self.pair = pair
-            self.currency = starting_currency
-            self.asset = starting_asset
-            self.agression = agression
-            if agression != 1.0:
-                main_logger("⚠️ Warning: Aggression setting other than 1 does not have any effect if syncing interface with bot.")
-            self.fee_rate = fee_rate if not fee_in_percent else fee_rate / 100.0
-            self.loss_tolerance = loss_tolerance
-            main_logger(f"🤖 Bot initialized with {self.currency} USD and {self.asset} {self.pair.split('-')[0]}")
-            main_logger(f"⚙️ Trading parameters: Agression={self.agression}/1.0, Fee Rate={self.fee_rate*100:.2f}%, Loss Tolerance={self.loss_tolerance*100:.2f}%")
-            main_logger("The interface used is: " + str(interface))
-
-            self.position = "long" if self.asset > 0 else "short" # can be "long", or "short"
-
-            self.interface = interface
-            interface.connect_to_exchange()
-            interface.sync_with_bot(self)
-            interface.assert_exchange_sync(self)
-        elif SYNC_BOT_WITH_INTERFACE:
-            self.interface = interface
-            interface.connect_to_exchange()
-            self.currency = interface.fetch_exchange_balance_currency()
-            self.asset = interface.fetch_exchange_balance_asset()
-            self.position = "long" if self.asset > 0 else "short"
-            self.pair = pair
-            self.agression = agression
-            self.fee_rate = fee_rate if not fee_in_percent else fee_rate / 100.0
-            self.loss_tolerance = loss_tolerance
-            main_logger(f"🤖 Bot synced with interface. Starting with {self.currency} {self.pair.split('-')[1]} and {self.asset} {self.pair.split('-')[0]}")
-            main_logger("The interface used is: " + str(interface))
-            main_logger(f"⚙️ Trading parameters: Agression={self.agression}/1.0, Fee Rate={self.fee_rate*100:.2f}%")
-            if currency_to_give_bot != None and asset_to_give_bot != None:
-                main_logger(f"Due to the agression setting of {self.agression}, the bot will only trade with {self.currency * self.agression if self.position == 'short' else self.asset * self.agression} of your {self.pair.split('-')[1] if self.position == 'short' else self.pair.split('-')[0]} balance. (That is {self.agression*100:.2f}% of your total balance).")
-            if currency_to_give_bot != None:
-                self.currency = currency_to_give_bot
-                main_logger(f"🤖 Bot currency balance overridden to {self.currency} {self.pair.split('-')[1]} for trading purposes.")
-                main_logger(f"Warning: The agression setting is ignored when overriding balances directly. Also, ensure that the bot has enough balance to trade with.")
-            if asset_to_give_bot != None:
-                self.asset = asset_to_give_bot
-                main_logger(f"🤖 Bot asset balance overridden to {self.asset} {self.pair.split('-')[0]} for trading purposes.")
-                main_logger(f"Warning: The agression setting is ignored when overriding balances directly. Also, ensure that the bot has enough balance to trade with.")
-            assert (self.currency==0) ^ (self.asset==0), "Bot can start with either currency or asset, not both. If you want to start with both, try making two separate bots."
-            main_logger("Your actual balances from the interface after syncing are: " + str(interface.fetch_exchange_balance_currency()) + self.pair.split("-")[1] + " and " + str(interface.fetch_exchange_balance_asset()) + self.pair.split("-")[0])
-
-        self.currency_baseline = float(self.currency)
-        self.asset_baseline = float(self.asset)
+        # Initialize dual baseline system for accurate APY tracking
+        # Both USD and crypto baselines are tracked from the start
+        if self.position == "short":
+            # Starting with USD
+            self.currency_baseline = float(self.currency)
+            self.initial_usd_baseline = float(self.currency)
+            # Calculate theoretical crypto baseline (what we could have bought)
+            if self.initial_price is not None:
+                self.asset_baseline = self.currency / self.initial_price
+                self.initial_crypto_baseline = self.asset_baseline
+            else:
+                # Fallback: will be set when first price is available
+                self.asset_baseline = 0.0
+                self.initial_crypto_baseline = 0.0
+                main_logger("⚠️ Warning: initial_price not provided. Crypto baseline will be set on first price update.")
+        else:
+            # Starting with crypto
+            self.asset_baseline = float(self.asset)
+            self.initial_crypto_baseline = float(self.asset)
+            # Calculate theoretical USD baseline (what we could have sold for)
+            if self.initial_price is not None:
+                self.currency_baseline = self.asset * self.initial_price
+                self.initial_usd_baseline = self.currency_baseline
+            else:
+                # Fallback: will be set when first price is available
+                self.currency_baseline = 0.0
+                self.initial_usd_baseline = 0.0
+                main_logger("⚠️ Warning: initial_price not provided. USD baseline will be set on first price update.")
+        
+        # Track start time for APY calculations
+        self.start_time = datetime.now(timezone.utc)
+        
+        # Track idle time metrics
+        self.candles_since_last_trade = 0
+        self.max_idle_candles = 0
         
         # Initialize strategy if provided
         if self.strategy is not None:
@@ -165,11 +208,16 @@ class Bot:
             # Note: With loss_tolerance > 0, new baseline may be slightly less than old baseline
             assert self.asset > min_acceptable, f"Post-trade asset balance {self.asset:.8f} is not greater than min acceptable {min_acceptable:.8f} (baseline {self.asset_baseline:.8f} with {self.loss_tolerance*100:.2f}% tolerance)"
 
-            # Update baseline - track the best position we've achieved
-            # With loss tolerance, this might be lower than previous baseline
+            # Update BOTH baselines - track progression of both USD and crypto
+            # Asset baseline: actual crypto we now hold
             self.asset_baseline = self.asset
+            # Currency baseline: theoretical USD value if we sold at this price
+            self.currency_baseline = self.asset * price
             
-            main_logger(f"✅ BUY COMPLETE: Now holding {self.asset:.8f} {self.pair.split('-')[0]} (new baseline: {self.asset_baseline:.8f})")
+            # Reset idle time counter on successful trade
+            self.candles_since_last_trade = 0
+            
+            main_logger(f"✅ BUY COMPLETE: Now holding {self.asset:.8f} {self.pair.split('-')[0]} (crypto baseline: {self.asset_baseline:.8f}, usd baseline: ${self.currency_baseline:.2f})")
             
             # Emit trade to dashboard
             emit_trade_executed('BUY', price)
@@ -228,11 +276,16 @@ class Bot:
             # Calculate profit/loss relative to old baseline
             profit = self.currency - self.currency_baseline
             
-            # Update baseline - track the best position we've achieved
-            # With loss tolerance, this might be lower than previous baseline
+            # Update BOTH baselines - track progression of both USD and crypto
+            # Currency baseline: actual USD we now hold
             self.currency_baseline = self.currency
+            # Asset baseline: theoretical crypto we could buy at this price
+            self.asset_baseline = self.currency / price
             
-            main_logger(f"✅ SELL COMPLETE: Now holding {self.currency:.2f} {self.pair.split('-')[1]} (new baseline: {self.currency_baseline:.2f}, profit: +${profit:.2f})")
+            # Reset idle time counter on successful trade
+            self.candles_since_last_trade = 0
+            
+            main_logger(f"✅ SELL COMPLETE: Now holding ${self.currency:.2f} {self.pair.split('-')[1]} (usd baseline: ${self.currency_baseline:.2f}, crypto baseline: {self.asset_baseline:.8f}, profit: +${profit:.2f})")
             
             # Emit trade to dashboard
             emit_trade_executed('SELL', price)
@@ -246,6 +299,21 @@ class Bot:
         """
         candles = self._ticker_stream.get_candles()
         current_price = candle[4]  # Close price of the new candle
+        
+        # Update idle time tracking
+        self.candles_since_last_trade += 1
+        if self.candles_since_last_trade > self.max_idle_candles:
+            self.max_idle_candles = self.candles_since_last_trade
+        
+        # Handle lazy initialization of baselines if initial_price wasn't provided
+        if self.initial_price is None:
+            self.initial_price = current_price
+            if self.position == "short" and self.asset_baseline == 0.0:
+                self.asset_baseline = self.currency / current_price
+                self.initial_crypto_baseline = self.asset_baseline
+            elif self.position == "long" and self.currency_baseline == 0.0:
+                self.currency_baseline = self.asset * current_price
+                self.initial_usd_baseline = self.currency_baseline
         
         try:
             if self.position == "long" and self.sell_signal(candles):
@@ -298,7 +366,7 @@ class Bot:
 
 if __name__ == '__main__':
 
-    interface = PaperTradingInterface()
+    interface = PaperTradingInterface(starting_currency=1000.0, starting_asset=0.0)
 
     bot = Bot(interface)
 

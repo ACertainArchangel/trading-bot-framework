@@ -1,3 +1,5 @@
+Remove default emas
+
 3 months before Dec 17 2025 is bullish
 3 months before that is bearish. 
 backtest both periods to see which strats are best in each market and which are robust across both, ensuring no contradictions with results from backtest_greedy_momentum.py

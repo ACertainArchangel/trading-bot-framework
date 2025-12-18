@@ -1,0 +1,419 @@
+✅ Fetched 25850 candles total
+✅ Loaded 25850 candles
+⏱️  Data loading took 26.5 seconds
+
+📊 RSI Strategy:
+  • RSI(14, 30/70)
+  • RSI(14, 20/80)
+  • RSI(9, 30/70)
+
+📊 Bollinger Bands Strategy:
+  • Bollinger(20, 2.0σ)
+  • Bollinger(20, 1.5σ)
+  • Bollinger(10, 2.0σ)
+
+📊 EMA Crossover Strategy:
+  • EMA(9/21)
+  • EMA(9/26)
+  • EMA(12/26)
+  • EMA(50/200)
+
+📊 Stochastic Strategy:
+  • Stochastic(14,3)
+  • Stochastic(5,3)
+
+📊 Mean Reversion Strategy:
+  • MeanRev(20, -1.5σ)
+  • MeanRev(20, -2.0σ)
+
+📊 Momentum Strategy:
+  • Momentum(10, 2.0%)
+  • Momentum(10, 1.0%)
+
+📊 MACD Strategy:
+  • MACD(12,26,9)
+  • MACD(8,17,9)
+
+📊 Best Greedy Momentum (59.3% APY from previous backtest):
+  • GreedyMom(p=14, patience=288, margin=1.0%)
+
+📊 Best Greedy EMA Cross:
+  • GreedyEMA(9/21, patience=144, margin=1.0%) (30.3% APY from previous)
+  • GreedyEMA(12/26, patience=144, margin=1.0%) (29.4% APY from previous)
+
+📊 Greedy MACD Strategy:
+  • 36 Greedy MACD variations
+
+📊 Total Summary:
+   • Base strategies: 57
+   • Loss tolerance values: 5
+   • Total test configurations: 285
+   • Starting capital: $1000.00
+
+🚀 Running 285 backtests in parallel...
+
+Running backtests: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 285/285 [55:27<00:00, 11.68s/test]
+
+✅ All tests complete!
+
+  [1/285] RSI(14, 30/70) @ 0.00% loss → APY_USD: 6.2%, Trades: 19, Rejected: 0B/0S
+  [2/285] RSI(14, 30/70) @ 0.10% loss → APY_USD: 4.4%, Trades: 19, Rejected: 0B/0S
+  [3/285] RSI(14, 30/70) @ 0.50% loss → APY_USD: 2.7%, Trades: 25, Rejected: 0B/0S
+  [4/285] RSI(14, 30/70) @ 1.00% loss → APY_USD: 13.9%, Trades: 121, Rejected: 0B/0S
+  [5/285] RSI(14, 30/70) @ 2.50% loss → APY_USD: -14.8%, Trades: 127, Rejected: 0B/0S
+  [6/285] RSI(14, 20/80) @ 0.00% loss → APY_USD: 1.0%, Trades: 3, Rejected: 0B/0S
+  [7/285] RSI(14, 20/80) @ 0.10% loss → APY_USD: 1.0%, Trades: 3, Rejected: 0B/0S
+  [8/285] RSI(14, 20/80) @ 0.50% loss → APY_USD: -3.9%, Trades: 9, Rejected: 0B/0S
+  [9/285] RSI(14, 20/80) @ 1.00% loss → APY_USD: -4.6%, Trades: 19, Rejected: 0B/0S
+  [10/285] RSI(14, 20/80) @ 2.50% loss → APY_USD: -25.6%, Trades: 63, Rejected: 0B/0S
+  [11/285] RSI(9, 30/70) @ 0.00% loss → APY_USD: 1.4%, Trades: 7, Rejected: 0B/0S
+  [12/285] RSI(9, 30/70) @ 0.10% loss → APY_USD: 1.0%, Trades: 7, Rejected: 0B/0S
+  [13/285] RSI(9, 30/70) @ 0.50% loss → APY_USD: -2.9%, Trades: 65, Rejected: 0B/0S
+  [14/285] RSI(9, 30/70) @ 1.00% loss → APY_USD: -12.4%, Trades: 193, Rejected: 0B/0S
+  [15/285] RSI(9, 30/70) @ 2.50% loss → APY_USD: 7.2%, Trades: 271, Rejected: 0B/0S
+  [16/285] Bollinger(20, 2.0σ) @ 0.00% loss → APY_USD: 8.5%, Trades: 17, Rejected: 0B/0S
+  [17/285] Bollinger(20, 2.0σ) @ 0.10% loss → APY_USD: 7.6%, Trades: 17, Rejected: 0B/0S
+  [18/285] Bollinger(20, 2.0σ) @ 0.50% loss → APY_USD: 0.3%, Trades: 5, Rejected: 0B/0S
+  [19/285] Bollinger(20, 2.0σ) @ 1.00% loss → APY_USD: 49.6%, Trades: 129, Rejected: 0B/0S
+  [20/285] Bollinger(20, 2.0σ) @ 2.50% loss → APY_USD: 8.8%, Trades: 133, Rejected: 0B/0S
+  [21/285] Bollinger(20, 1.5σ) @ 0.00% loss → APY_USD: 2.6%, Trades: 7, Rejected: 0B/0S
+  [22/285] Bollinger(20, 1.5σ) @ 0.10% loss → APY_USD: 17.7%, Trades: 29, Rejected: 0B/0S
+  [23/285] Bollinger(20, 1.5σ) @ 0.50% loss → APY_USD: 24.5%, Trades: 133, Rejected: 0B/0S
+  [24/285] Bollinger(20, 1.5σ) @ 1.00% loss → APY_USD: 3.5%, Trades: 147, Rejected: 0B/0S
+  [25/285] Bollinger(20, 1.5σ) @ 2.50% loss → APY_USD: -2.5%, Trades: 197, Rejected: 0B/0S
+  [26/285] Bollinger(10, 2.0σ) @ 0.00% loss → APY_USD: 5.2%, Trades: 7, Rejected: 0B/0S
+  [27/285] Bollinger(10, 2.0σ) @ 0.10% loss → APY_USD: 3.6%, Trades: 7, Rejected: 0B/0S
+  [28/285] Bollinger(10, 2.0σ) @ 0.50% loss → APY_USD: 9.5%, Trades: 45, Rejected: 0B/0S
+  [29/285] Bollinger(10, 2.0σ) @ 1.00% loss → APY_USD: 3.7%, Trades: 57, Rejected: 0B/0S
+  [30/285] Bollinger(10, 2.0σ) @ 2.50% loss → APY_USD: 14.9%, Trades: 129, Rejected: 0B/0S
+  [31/285] EMA(9/21) @ 0.00% loss → APY_USD: 17.9%, Trades: 13, Rejected: 0B/0S
+  [32/285] EMA(9/21) @ 0.10% loss → APY_USD: 10.0%, Trades: 13, Rejected: 0B/0S
+  [33/285] EMA(9/21) @ 0.50% loss → APY_USD: 9.5%, Trades: 309, Rejected: 0B/0S
+  [34/285] EMA(9/21) @ 1.00% loss → APY_USD: -56.5%, Trades: 1045, Rejected: 0B/0S
+  [35/285] EMA(9/21) @ 2.50% loss → APY_USD: -62.4%, Trades: 1229, Rejected: 0B/0S
+  [36/285] EMA(9/26) @ 0.00% loss → APY_USD: 15.3%, Trades: 15, Rejected: 0B/0S
+  [37/285] EMA(9/26) @ 0.10% loss → APY_USD: 16.6%, Trades: 21, Rejected: 0B/0S
+  [38/285] EMA(9/26) @ 0.50% loss → APY_USD: 22.7%, Trades: 295, Rejected: 0B/0S
+  [39/285] EMA(9/26) @ 1.00% loss → APY_USD: -49.7%, Trades: 595, Rejected: 0B/0S
+  [40/285] EMA(9/26) @ 2.50% loss → APY_USD: -54.9%, Trades: 1109, Rejected: 0B/0S
+  [41/285] EMA(12/26) @ 0.00% loss → APY_USD: 15.5%, Trades: 11, Rejected: 0B/0S
+  [42/285] EMA(12/26) @ 0.10% loss → APY_USD: 20.2%, Trades: 23, Rejected: 0B/0S
+  [43/285] EMA(12/26) @ 0.50% loss → APY_USD: 12.6%, Trades: 387, Rejected: 0B/0S
+  [44/285] EMA(12/26) @ 1.00% loss → APY_USD: -51.1%, Trades: 554, Rejected: 0B/0S
+  [45/285] EMA(12/26) @ 2.50% loss → APY_USD: -47.9%, Trades: 963, Rejected: 0B/0S
+  [46/285] EMA(50/200) @ 0.00% loss → APY_USD: 49.4%, Trades: 13, Rejected: 0B/0S
+  [47/285] EMA(50/200) @ 0.10% loss → APY_USD: 32.1%, Trades: 15, Rejected: 0B/0S
+  [48/285] EMA(50/200) @ 0.50% loss → APY_USD: 17.7%, Trades: 15, Rejected: 0B/0S
+  [49/285] EMA(50/200) @ 1.00% loss → APY_USD: 37.4%, Trades: 31, Rejected: 0B/0S
+  [50/285] EMA(50/200) @ 2.50% loss → APY_USD: 0.4%, Trades: 148, Rejected: 0B/0S
+  [51/285] Stochastic(14,3) @ 0.00% loss → APY_USD: 3.0%, Trades: 5, Rejected: 0B/0S
+  [52/285] Stochastic(14,3) @ 0.10% loss → APY_USD: 2.9%, Trades: 7, Rejected: 0B/0S
+  [53/285] Stochastic(14,3) @ 0.50% loss → APY_USD: 4.6%, Trades: 61, Rejected: 0B/0S
+  [54/285] Stochastic(14,3) @ 1.00% loss → APY_USD: 15.2%, Trades: 117, Rejected: 0B/0S
+  [55/285] Stochastic(14,3) @ 2.50% loss → APY_USD: 12.8%, Trades: 151, Rejected: 0B/0S
+  [56/285] Stochastic(5,3) @ 0.00% loss → APY_USD: 4.9%, Trades: 5, Rejected: 0B/0S
+  [57/285] Stochastic(5,3) @ 0.10% loss → APY_USD: 4.9%, Trades: 5, Rejected: 0B/0S
+  [58/285] Stochastic(5,3) @ 0.50% loss → APY_USD: 21.5%, Trades: 79, Rejected: 0B/0S
+  [59/285] Stochastic(5,3) @ 1.00% loss → APY_USD: 21.9%, Trades: 93, Rejected: 0B/0S
+  [60/285] Stochastic(5,3) @ 2.50% loss → APY_USD: -4.7%, Trades: 157, Rejected: 0B/0S
+  [61/285] MeanRev(20, -1.5σ) @ 0.00% loss → APY_USD: 2.6%, Trades: 7, Rejected: 0B/0S
+  [62/285] MeanRev(20, -1.5σ) @ 0.10% loss → APY_USD: 17.7%, Trades: 29, Rejected: 0B/0S
+  [63/285] MeanRev(20, -1.5σ) @ 0.50% loss → APY_USD: 24.5%, Trades: 133, Rejected: 0B/0S
+  [64/285] MeanRev(20, -1.5σ) @ 1.00% loss → APY_USD: 3.5%, Trades: 147, Rejected: 0B/0S
+  [65/285] MeanRev(20, -1.5σ) @ 2.50% loss → APY_USD: -2.5%, Trades: 197, Rejected: 0B/0S
+  [66/285] MeanRev(20, -2.0σ) @ 0.00% loss → APY_USD: 8.5%, Trades: 17, Rejected: 0B/0S
+  [67/285] MeanRev(20, -2.0σ) @ 0.10% loss → APY_USD: 7.6%, Trades: 17, Rejected: 0B/0S
+  [68/285] MeanRev(20, -2.0σ) @ 0.50% loss → APY_USD: 0.3%, Trades: 5, Rejected: 0B/0S
+  [69/285] MeanRev(20, -2.0σ) @ 1.00% loss → APY_USD: 49.6%, Trades: 129, Rejected: 0B/0S
+  [70/285] MeanRev(20, -2.0σ) @ 2.50% loss → APY_USD: 8.8%, Trades: 133, Rejected: 0B/0S
+  [71/285] Momentum(10, 2.0%) @ 0.00% loss → APY_USD: -0.0%, Trades: 1, Rejected: 0B/0S
+  [72/285] Momentum(10, 2.0%) @ 0.10% loss → APY_USD: -0.0%, Trades: 1, Rejected: 0B/0S
+  [73/285] Momentum(10, 2.0%) @ 0.50% loss → APY_USD: -0.0%, Trades: 1, Rejected: 0B/0S
+  [74/285] Momentum(10, 2.0%) @ 1.00% loss → APY_USD: 10.4%, Trades: 9, Rejected: 0B/0S
+  [75/285] Momentum(10, 2.0%) @ 2.50% loss → APY_USD: 10.4%, Trades: 9, Rejected: 0B/0S
+  [76/285] Momentum(10, 1.0%) @ 0.00% loss → APY_USD: 54.8%, Trades: 11, Rejected: 0B/0S
+  [77/285] Momentum(10, 1.0%) @ 0.10% loss → APY_USD: 54.8%, Trades: 11, Rejected: 0B/0S
+  [78/285] Momentum(10, 1.0%) @ 0.50% loss → APY_USD: 43.5%, Trades: 3, Rejected: 0B/0S
+  [79/285] Momentum(10, 1.0%) @ 1.00% loss → APY_USD: 32.2%, Trades: 25, Rejected: 0B/0S
+  [80/285] Momentum(10, 1.0%) @ 2.50% loss → APY_USD: 14.9%, Trades: 120, Rejected: 0B/0S
+  [81/285] MACD(12,26,9) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [82/285] MACD(12,26,9) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [83/285] MACD(12,26,9) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [84/285] MACD(12,26,9) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [85/285] MACD(12,26,9) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [86/285] MACD(8,17,9) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [87/285] MACD(8,17,9) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [88/285] MACD(8,17,9) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [89/285] MACD(8,17,9) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [90/285] MACD(8,17,9) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [91/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
+  [92/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 0.10% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
+  [93/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 0.50% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
+  [94/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 1.00% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
+  [95/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 2.50% loss → APY_USD: 3.5%, Trades: 16, Rejected: 0B/0S
+  [96/285] GreedyEMA(9/21, patience=144, margin=1.0%) @ 0.00% loss → APY_USD: 43.8%, Trades: 31, Rejected: 0B/0S
+  [97/285] GreedyEMA(9/21, patience=144, margin=1.0%) @ 0.10% loss → APY_USD: 27.9%, Trades: 35, Rejected: 0B/0S
+  [98/285] GreedyEMA(9/21, patience=144, margin=1.0%) @ 0.50% loss → APY_USD: 15.1%, Trades: 309, Rejected: 0B/0S
+  [99/285] GreedyEMA(9/21, patience=144, margin=1.0%) @ 1.00% loss → APY_USD: -56.5%, Trades: 1045, Rejected: 0B/0S
+  [100/285] GreedyEMA(9/21, patience=144, margin=1.0%) @ 2.50% loss → APY_USD: -62.4%, Trades: 1229, Rejected: 0B/0S
+  [101/285] GreedyEMA(12/26, patience=144, margin=1.0%) @ 0.00% loss → APY_USD: 31.6%, Trades: 21, Rejected: 0B/0S
+  [102/285] GreedyEMA(12/26, patience=144, margin=1.0%) @ 0.10% loss → APY_USD: 26.7%, Trades: 23, Rejected: 0B/0S
+  [103/285] GreedyEMA(12/26, patience=144, margin=1.0%) @ 0.50% loss → APY_USD: 17.6%, Trades: 387, Rejected: 0B/0S
+  [104/285] GreedyEMA(12/26, patience=144, margin=1.0%) @ 1.00% loss → APY_USD: -51.1%, Trades: 554, Rejected: 0B/0S
+  [105/285] GreedyEMA(12/26, patience=144, margin=1.0%) @ 2.50% loss → APY_USD: -47.9%, Trades: 963, Rejected: 0B/0S
+  [106/285] GreedyMACD(12/26/9, patience=144, margin=0.5%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [107/285] GreedyMACD(12/26/9, patience=144, margin=0.5%) @ 0.10% loss → APY_USD: 7.8%, Trades: 23, Rejected: 0B/0S
+  [108/285] GreedyMACD(12/26/9, patience=144, margin=0.5%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [109/285] GreedyMACD(12/26/9, patience=144, margin=0.5%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [110/285] GreedyMACD(12/26/9, patience=144, margin=0.5%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [111/285] GreedyMACD(12/26/9, patience=144, margin=0.75%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [112/285] GreedyMACD(12/26/9, patience=144, margin=0.75%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [113/285] GreedyMACD(12/26/9, patience=144, margin=0.75%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [114/285] GreedyMACD(12/26/9, patience=144, margin=0.75%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [115/285] GreedyMACD(12/26/9, patience=144, margin=0.75%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [116/285] GreedyMACD(12/26/9, patience=144, margin=1.0%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [117/285] GreedyMACD(12/26/9, patience=144, margin=1.0%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [118/285] GreedyMACD(12/26/9, patience=144, margin=1.0%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [119/285] GreedyMACD(12/26/9, patience=144, margin=1.0%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [120/285] GreedyMACD(12/26/9, patience=144, margin=1.0%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [121/285] GreedyMACD(12/26/9, patience=144, margin=1.25%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [122/285] GreedyMACD(12/26/9, patience=144, margin=1.25%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [123/285] GreedyMACD(12/26/9, patience=144, margin=1.25%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [124/285] GreedyMACD(12/26/9, patience=144, margin=1.25%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [125/285] GreedyMACD(12/26/9, patience=144, margin=1.25%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [126/285] GreedyMACD(12/26/9, patience=288, margin=0.5%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [127/285] GreedyMACD(12/26/9, patience=288, margin=0.5%) @ 0.10% loss → APY_USD: 7.8%, Trades: 23, Rejected: 0B/0S
+  [128/285] GreedyMACD(12/26/9, patience=288, margin=0.5%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [129/285] GreedyMACD(12/26/9, patience=288, margin=0.5%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [130/285] GreedyMACD(12/26/9, patience=288, margin=0.5%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [131/285] GreedyMACD(12/26/9, patience=288, margin=0.75%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [132/285] GreedyMACD(12/26/9, patience=288, margin=0.75%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [133/285] GreedyMACD(12/26/9, patience=288, margin=0.75%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [134/285] GreedyMACD(12/26/9, patience=288, margin=0.75%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [135/285] GreedyMACD(12/26/9, patience=288, margin=0.75%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [136/285] GreedyMACD(12/26/9, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [137/285] GreedyMACD(12/26/9, patience=288, margin=1.0%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [138/285] GreedyMACD(12/26/9, patience=288, margin=1.0%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [139/285] GreedyMACD(12/26/9, patience=288, margin=1.0%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [140/285] GreedyMACD(12/26/9, patience=288, margin=1.0%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [141/285] GreedyMACD(12/26/9, patience=288, margin=1.25%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [142/285] GreedyMACD(12/26/9, patience=288, margin=1.25%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [143/285] GreedyMACD(12/26/9, patience=288, margin=1.25%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [144/285] GreedyMACD(12/26/9, patience=288, margin=1.25%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [145/285] GreedyMACD(12/26/9, patience=288, margin=1.25%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [146/285] GreedyMACD(12/26/9, patience=576, margin=0.5%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [147/285] GreedyMACD(12/26/9, patience=576, margin=0.5%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [148/285] GreedyMACD(12/26/9, patience=576, margin=0.5%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [149/285] GreedyMACD(12/26/9, patience=576, margin=0.5%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [150/285] GreedyMACD(12/26/9, patience=576, margin=0.5%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [151/285] GreedyMACD(12/26/9, patience=576, margin=0.75%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [152/285] GreedyMACD(12/26/9, patience=576, margin=0.75%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [153/285] GreedyMACD(12/26/9, patience=576, margin=0.75%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [154/285] GreedyMACD(12/26/9, patience=576, margin=0.75%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [155/285] GreedyMACD(12/26/9, patience=576, margin=0.75%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [156/285] GreedyMACD(12/26/9, patience=576, margin=1.0%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [157/285] GreedyMACD(12/26/9, patience=576, margin=1.0%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [158/285] GreedyMACD(12/26/9, patience=576, margin=1.0%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [159/285] GreedyMACD(12/26/9, patience=576, margin=1.0%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [160/285] GreedyMACD(12/26/9, patience=576, margin=1.0%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [161/285] GreedyMACD(12/26/9, patience=576, margin=1.25%) @ 0.00% loss → APY_USD: 0.9%, Trades: 5, Rejected: 0B/0S
+  [162/285] GreedyMACD(12/26/9, patience=576, margin=1.25%) @ 0.10% loss → APY_USD: 6.3%, Trades: 23, Rejected: 0B/0S
+  [163/285] GreedyMACD(12/26/9, patience=576, margin=1.25%) @ 0.50% loss → APY_USD: -26.3%, Trades: 671, Rejected: 0B/0S
+  [164/285] GreedyMACD(12/26/9, patience=576, margin=1.25%) @ 1.00% loss → APY_USD: -11.7%, Trades: 491, Rejected: 0B/0S
+  [165/285] GreedyMACD(12/26/9, patience=576, margin=1.25%) @ 2.50% loss → APY_USD: -82.7%, Trades: 2095, Rejected: 0B/0S
+  [166/285] GreedyMACD(8/17/9, patience=144, margin=0.5%) @ 0.00% loss → APY_USD: 11.8%, Trades: 17, Rejected: 0B/0S
+  [167/285] GreedyMACD(8/17/9, patience=144, margin=0.5%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [168/285] GreedyMACD(8/17/9, patience=144, margin=0.5%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [169/285] GreedyMACD(8/17/9, patience=144, margin=0.5%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [170/285] GreedyMACD(8/17/9, patience=144, margin=0.5%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [171/285] GreedyMACD(8/17/9, patience=144, margin=0.75%) @ 0.00% loss → APY_USD: 12.4%, Trades: 17, Rejected: 0B/0S
+  [172/285] GreedyMACD(8/17/9, patience=144, margin=0.75%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [173/285] GreedyMACD(8/17/9, patience=144, margin=0.75%) @ 0.50% loss → APY_USD: 4.2%, Trades: 535, Rejected: 0B/0S
+  [174/285] GreedyMACD(8/17/9, patience=144, margin=0.75%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [175/285] GreedyMACD(8/17/9, patience=144, margin=0.75%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [176/285] GreedyMACD(8/17/9, patience=144, margin=1.0%) @ 0.00% loss → APY_USD: 13.4%, Trades: 17, Rejected: 0B/0S
+  [177/285] GreedyMACD(8/17/9, patience=144, margin=1.0%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [178/285] GreedyMACD(8/17/9, patience=144, margin=1.0%) @ 0.50% loss → APY_USD: 4.2%, Trades: 535, Rejected: 0B/0S
+  [179/285] GreedyMACD(8/17/9, patience=144, margin=1.0%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [180/285] GreedyMACD(8/17/9, patience=144, margin=1.0%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [181/285] GreedyMACD(8/17/9, patience=144, margin=1.25%) @ 0.00% loss → APY_USD: 14.2%, Trades: 17, Rejected: 0B/0S
+  [182/285] GreedyMACD(8/17/9, patience=144, margin=1.25%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [183/285] GreedyMACD(8/17/9, patience=144, margin=1.25%) @ 0.50% loss → APY_USD: 5.6%, Trades: 535, Rejected: 0B/0S
+  [184/285] GreedyMACD(8/17/9, patience=144, margin=1.25%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [185/285] GreedyMACD(8/17/9, patience=144, margin=1.25%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [186/285] GreedyMACD(8/17/9, patience=288, margin=0.5%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [187/285] GreedyMACD(8/17/9, patience=288, margin=0.5%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [188/285] GreedyMACD(8/17/9, patience=288, margin=0.5%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [189/285] GreedyMACD(8/17/9, patience=288, margin=0.5%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [190/285] GreedyMACD(8/17/9, patience=288, margin=0.5%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [191/285] GreedyMACD(8/17/9, patience=288, margin=0.75%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [192/285] GreedyMACD(8/17/9, patience=288, margin=0.75%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [193/285] GreedyMACD(8/17/9, patience=288, margin=0.75%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [194/285] GreedyMACD(8/17/9, patience=288, margin=0.75%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [195/285] GreedyMACD(8/17/9, patience=288, margin=0.75%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [196/285] GreedyMACD(8/17/9, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [197/285] GreedyMACD(8/17/9, patience=288, margin=1.0%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [198/285] GreedyMACD(8/17/9, patience=288, margin=1.0%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [199/285] GreedyMACD(8/17/9, patience=288, margin=1.0%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [200/285] GreedyMACD(8/17/9, patience=288, margin=1.0%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [201/285] GreedyMACD(8/17/9, patience=288, margin=1.25%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [202/285] GreedyMACD(8/17/9, patience=288, margin=1.25%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [203/285] GreedyMACD(8/17/9, patience=288, margin=1.25%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [204/285] GreedyMACD(8/17/9, patience=288, margin=1.25%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [205/285] GreedyMACD(8/17/9, patience=288, margin=1.25%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [206/285] GreedyMACD(8/17/9, patience=576, margin=0.5%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [207/285] GreedyMACD(8/17/9, patience=576, margin=0.5%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [208/285] GreedyMACD(8/17/9, patience=576, margin=0.5%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [209/285] GreedyMACD(8/17/9, patience=576, margin=0.5%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [210/285] GreedyMACD(8/17/9, patience=576, margin=0.5%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [211/285] GreedyMACD(8/17/9, patience=576, margin=0.75%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [212/285] GreedyMACD(8/17/9, patience=576, margin=0.75%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [213/285] GreedyMACD(8/17/9, patience=576, margin=0.75%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [214/285] GreedyMACD(8/17/9, patience=576, margin=0.75%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [215/285] GreedyMACD(8/17/9, patience=576, margin=0.75%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [216/285] GreedyMACD(8/17/9, patience=576, margin=1.0%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [217/285] GreedyMACD(8/17/9, patience=576, margin=1.0%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [218/285] GreedyMACD(8/17/9, patience=576, margin=1.0%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [219/285] GreedyMACD(8/17/9, patience=576, margin=1.0%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [220/285] GreedyMACD(8/17/9, patience=576, margin=1.0%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [221/285] GreedyMACD(8/17/9, patience=576, margin=1.25%) @ 0.00% loss → APY_USD: 12.6%, Trades: 17, Rejected: 0B/0S
+  [222/285] GreedyMACD(8/17/9, patience=576, margin=1.25%) @ 0.10% loss → APY_USD: 3.7%, Trades: 11, Rejected: 0B/0S
+  [223/285] GreedyMACD(8/17/9, patience=576, margin=1.25%) @ 0.50% loss → APY_USD: 10.8%, Trades: 539, Rejected: 0B/0S
+  [224/285] GreedyMACD(8/17/9, patience=576, margin=1.25%) @ 1.00% loss → APY_USD: -18.0%, Trades: 659, Rejected: 0B/0S
+  [225/285] GreedyMACD(8/17/9, patience=576, margin=1.25%) @ 2.50% loss → APY_USD: -80.3%, Trades: 2705, Rejected: 0B/0S
+  [226/285] GreedyMACD(5/13/5, patience=144, margin=0.5%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [227/285] GreedyMACD(5/13/5, patience=144, margin=0.5%) @ 0.10% loss → APY_USD: 4.9%, Trades: 31, Rejected: 0B/0S
+  [228/285] GreedyMACD(5/13/5, patience=144, margin=0.5%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [229/285] GreedyMACD(5/13/5, patience=144, margin=0.5%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [230/285] GreedyMACD(5/13/5, patience=144, margin=0.5%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [231/285] GreedyMACD(5/13/5, patience=144, margin=0.75%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [232/285] GreedyMACD(5/13/5, patience=144, margin=0.75%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [233/285] GreedyMACD(5/13/5, patience=144, margin=0.75%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [234/285] GreedyMACD(5/13/5, patience=144, margin=0.75%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [235/285] GreedyMACD(5/13/5, patience=144, margin=0.75%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [236/285] GreedyMACD(5/13/5, patience=144, margin=1.0%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [237/285] GreedyMACD(5/13/5, patience=144, margin=1.0%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [238/285] GreedyMACD(5/13/5, patience=144, margin=1.0%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [239/285] GreedyMACD(5/13/5, patience=144, margin=1.0%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [240/285] GreedyMACD(5/13/5, patience=144, margin=1.0%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [241/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [242/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [243/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [244/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [245/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [246/285] GreedyMACD(5/13/5, patience=288, margin=0.5%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [247/285] GreedyMACD(5/13/5, patience=288, margin=0.5%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [248/285] GreedyMACD(5/13/5, patience=288, margin=0.5%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [249/285] GreedyMACD(5/13/5, patience=288, margin=0.5%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [250/285] GreedyMACD(5/13/5, patience=288, margin=0.5%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [251/285] GreedyMACD(5/13/5, patience=288, margin=0.75%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [252/285] GreedyMACD(5/13/5, patience=288, margin=0.75%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [253/285] GreedyMACD(5/13/5, patience=288, margin=0.75%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [254/285] GreedyMACD(5/13/5, patience=288, margin=0.75%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [255/285] GreedyMACD(5/13/5, patience=288, margin=0.75%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [256/285] GreedyMACD(5/13/5, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [257/285] GreedyMACD(5/13/5, patience=288, margin=1.0%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [258/285] GreedyMACD(5/13/5, patience=288, margin=1.0%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [259/285] GreedyMACD(5/13/5, patience=288, margin=1.0%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [260/285] GreedyMACD(5/13/5, patience=288, margin=1.0%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [261/285] GreedyMACD(5/13/5, patience=288, margin=1.25%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [262/285] GreedyMACD(5/13/5, patience=288, margin=1.25%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [263/285] GreedyMACD(5/13/5, patience=288, margin=1.25%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [264/285] GreedyMACD(5/13/5, patience=288, margin=1.25%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [265/285] GreedyMACD(5/13/5, patience=288, margin=1.25%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [266/285] GreedyMACD(5/13/5, patience=576, margin=0.5%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [267/285] GreedyMACD(5/13/5, patience=576, margin=0.5%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [268/285] GreedyMACD(5/13/5, patience=576, margin=0.5%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [269/285] GreedyMACD(5/13/5, patience=576, margin=0.5%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [270/285] GreedyMACD(5/13/5, patience=576, margin=0.5%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [271/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [272/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [273/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [274/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [275/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [276/285] GreedyMACD(5/13/5, patience=576, margin=1.0%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [277/285] GreedyMACD(5/13/5, patience=576, margin=1.0%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [278/285] GreedyMACD(5/13/5, patience=576, margin=1.0%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [279/285] GreedyMACD(5/13/5, patience=576, margin=1.0%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [280/285] GreedyMACD(5/13/5, patience=576, margin=1.0%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+  [281/285] GreedyMACD(5/13/5, patience=576, margin=1.25%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+  [282/285] GreedyMACD(5/13/5, patience=576, margin=1.25%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+  [283/285] GreedyMACD(5/13/5, patience=576, margin=1.25%) @ 0.50% loss → APY_USD: -6.0%, Trades: 979, Rejected: 0B/0S
+  [284/285] GreedyMACD(5/13/5, patience=576, margin=1.25%) @ 1.00% loss → APY_USD: -65.9%, Trades: 2509, Rejected: 0B/0S
+  [285/285] GreedyMACD(5/13/5, patience=576, margin=1.25%) @ 2.50% loss → APY_USD: -88.8%, Trades: 4328, Rejected: 0B/0S
+
+⏱️  Total backtest time: 3327.8 seconds
+⚡ Average time per test: 11.7 seconds
+
+
+✅ All tests complete!
+
+⏱️  Total backtest time: 3327.8 seconds
+⚡ Average time per test: 11.7 seconds
+
+====================================================================================================================================================================================
+📈 TOP 30 PERFORMERS
+====================================================================================================================================================================================
+
+Rank   Strategy                                 Loss Tol   APY_USD    APY_BTC    Trades   Win%     Avg$/Trade   Final$       Idle         Pos   
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      Momentum(10, 1.0%)                         0.00%     54.83%     99.12%       11    100.0%  $   -25.01   $    874.95  LONG  
+2      Momentum(10, 1.0%)                         0.10%     54.83%     99.12%       11    100.0%  $   -25.01   $    874.95  LONG  
+3      GreedyMom(p=14, patience=288, margin=1.0%)   0.00%     50.44%    344.69%       11    100.0%  $    13.92   $   1069.59  LONG  
+4      GreedyMom(p=14, patience=288, margin=1.0%)   0.10%     50.44%    344.69%       11    100.0%  $    13.92   $   1069.59  LONG  
+5      GreedyMom(p=14, patience=288, margin=1.0%)   0.50%     50.44%    272.78%       11    100.0%  $     4.69   $   1023.45  LONG  
+6      GreedyMom(p=14, patience=288, margin=1.0%)   1.00%     50.44%    272.78%       11    100.0%  $     4.69   $   1023.45  LONG  
+7      Bollinger(20, 2.0σ)                        1.00%     49.56%     93.43%      129     67.2%  $    -2.05   $    868.63  LONG  
+8      MeanRev(20, -2.0σ)                         1.00%     49.56%     93.43%      129     67.2%  $    -2.05   $    868.63  LONG  
+9      EMA(50/200)                                0.00%     49.36%    138.30%       13    100.0%  $   -14.14   $    915.14  LONG  
+10     GreedyEMA(9/21, patience=144, margin=1.0%)   0.00%     43.85%    100.27%       31    100.0%  $    -8.25   $    876.21  LONG  
+11     Momentum(10, 1.0%)                         0.50%     43.47%     18.11%        3    100.0%  $  -232.15   $    767.85  LONG  
+12     EMA(50/200)                                1.00%     37.43%     12.26%       31     33.3%  $   -16.12   $    758.17  LONG  
+13     Momentum(10, 1.0%)                         1.00%     32.15%    119.89%       25     50.0%  $    -8.59   $    896.92  LONG  
+14     EMA(50/200)                                0.10%     32.10%    110.77%       15     71.4%  $   -16.07   $    887.48  LONG  
+15     GreedyEMA(12/26, patience=144, margin=1.0%)   0.00%     31.58%     82.95%       21    100.0%  $   -14.34   $    856.62  LONG  
+16     GreedyEMA(9/21, patience=144, margin=1.0%)   0.10%     27.91%     83.89%       35     82.4%  $    -8.37   $    857.72  LONG  
+17     GreedyEMA(12/26, patience=144, margin=1.0%)   0.10%     26.70%     76.17%       23     90.9%  $   -13.77   $    848.57  LONG  
+18     Bollinger(20, 1.5σ)                        0.50%     24.49%     59.20%      133     60.6%  $    -2.62   $    827.36  LONG  
+19     MeanRev(20, -1.5σ)                         0.50%     24.49%     59.20%      133     60.6%  $    -2.62   $    827.36  LONG  
+20     EMA(9/26)                                  0.50%     22.68%     47.30%      295     30.6%  $    -1.28   $    811.44  LONG  
+21     Stochastic(5,3)                            1.00%     21.86%     40.03%       93     56.5%  $    -4.32   $    801.24  LONG  
+22     Stochastic(5,3)                            0.50%     21.51%     30.48%       79     53.8%  $    -5.46   $    787.21  LONG  
+23     EMA(12/26)                                 0.10%     20.21%     67.15%       23     81.8%  $   -14.77   $    837.49  LONG  
+24     EMA(9/21)                                  0.00%     17.92%     34.63%       13    100.0%  $   -34.43   $    793.40  LONG  
+25     EMA(50/200)                                0.50%     17.73%     28.05%       15     28.6%  $   -30.93   $    783.51  LONG  
+26     Bollinger(20, 1.5σ)                        0.10%     17.67%     25.75%       29     92.9%  $   -15.72   $    779.98  LONG  
+27     MeanRev(20, -1.5σ)                         0.10%     17.67%     25.75%       29     92.9%  $   -15.72   $    779.98  LONG  
+28     GreedyEMA(12/26, patience=144, margin=1.0%)   0.50%     17.61%    195.97%      387     29.0%  $    -0.18   $    966.09  LONG  
+29     EMA(9/26)                                  0.10%     16.57%     66.91%       21     70.0%  $   -16.28   $    837.19  LONG  
+30     EMA(12/26)                                 0.00%     15.53%     31.79%       11    100.0%  $   -42.16   $    789.18  LONG  
+
+================================================================================
+🏆 BEST PERFORMING CONFIGURATION
+================================================================================
+Strategy:                Momentum(10, 1.0%)
+Loss Tolerance:          0.00%
+
+APY (USD):               54.83%
+APY (BTC):               99.12%
+Value Return:            -12.51%
+Baseline Return (USD):   11.55%
+Baseline Return (BTC):   18.79%
+
+Initial USD Baseline:    $1000.00
+Final USD Baseline:      $1115.49
+Initial BTC Baseline:    0.00854461 BTC
+Final BTC Baseline:      0.01015010 BTC
+
+Starting Value:          $1000.00
+Current Value:           $874.95
+Total Profit:            $-125.05
+Total Trades:            11
+Win Rate:                100.0% (5 wins, 0 losses)
+Avg Profit/Trade:        $-25.01
+Longest Idle Time:       47d 23h 50m
+Final Position:          LONG
+
+📁 Results saved to:
+   JSON: backtest_results/backtest_main_20251217_175544.json
+   Summary: backtest_results/backtest_main_20251217_175544.txt

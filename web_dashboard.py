@@ -364,7 +364,7 @@ def get_bot_state():
 
 
 def emit_bot_state():
-    """Emit current bot state to all clients."""
+    """Emit current bot state to all clients, including projected APY metrics."""
     if config.get('bot'):
         bot = config['bot']
         candles = ticker_stream.get_candles() if ticker_stream else []
@@ -384,17 +384,71 @@ def emit_bot_state():
             min_acceptable_asset = bot.asset_baseline * (1 - bot.loss_tolerance)
             min_buy_price = (bot.currency * (1 - bot.fee_rate)) / min_acceptable_asset if min_acceptable_asset > 0 else None
         
+        # Calculate projected APY based on current performance
+        apy_usd = 0.0
+        apy_btc = 0.0
+        elapsed_seconds = 0
+        elapsed_str = "0s"
+        
+        if hasattr(bot, 'start_time') and bot.start_time:
+            now = datetime.now(timezone.utc)
+            elapsed = now - bot.start_time
+            elapsed_seconds = elapsed.total_seconds()
+            
+            # Format elapsed time
+            days = elapsed.days
+            hours = elapsed.seconds // 3600
+            minutes = (elapsed.seconds % 3600) // 60
+            if days > 0:
+                elapsed_str = f"{days}d {hours}h {minutes}m"
+            elif hours > 0:
+                elapsed_str = f"{hours}h {minutes}m"
+            else:
+                elapsed_str = f"{minutes}m"
+            
+            # Calculate APY if enough time has passed (at least 1 minute)
+            if elapsed_seconds >= 60:
+                years = elapsed_seconds / (365.25 * 24 * 3600)
+                
+                # USD APY - use safe power calculation to avoid overflow
+                if hasattr(bot, 'initial_usd_baseline') and bot.initial_usd_baseline > 0:
+                    try:
+                        ratio = bot.currency_baseline / bot.initial_usd_baseline
+                        if ratio > 0:
+                            # Use logarithms to avoid overflow: ratio^(1/years) = e^(ln(ratio)/years)
+                            import math
+                            apy_usd = (math.exp(math.log(ratio) / years) - 1) * 100
+                    except (OverflowError, ValueError):
+                        apy_usd = None  # Too extreme to calculate
+                
+                # BTC APY - use safe power calculation to avoid overflow
+                if hasattr(bot, 'initial_crypto_baseline') and bot.initial_crypto_baseline > 0:
+                    try:
+                        ratio = bot.asset_baseline / bot.initial_crypto_baseline
+                        if ratio > 0:
+                            # Use logarithms to avoid overflow: ratio^(1/years) = e^(ln(ratio)/years)
+                            import math
+                            apy_btc = (math.exp(math.log(ratio) / years) - 1) * 100
+                    except (OverflowError, ValueError):
+                        apy_btc = None  # Too extreme to calculate
+        
         state = {
             'position': bot.position,
             'currency': bot.currency,
             'asset': bot.asset,
             'currency_baseline': bot.currency_baseline,
             'asset_baseline': bot.asset_baseline,
+            'initial_usd_baseline': getattr(bot, 'initial_usd_baseline', 0),
+            'initial_crypto_baseline': getattr(bot, 'initial_crypto_baseline', 0),
             'fee_rate': bot.fee_rate,
             'loss_tolerance': bot.loss_tolerance,
             'min_sell_price': min_sell_price,
             'min_buy_price': min_buy_price,
-            'current_price': current_price
+            'current_price': current_price,
+            'apy_usd': apy_usd,
+            'apy_btc': apy_btc,
+            'elapsed_time': elapsed_str,
+            'elapsed_seconds': elapsed_seconds
         }
         
         socketio.emit('bot_state', state, namespace='/')

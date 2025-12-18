@@ -1,0 +1,499 @@
+================================================================================
+MAIN BACKTEST - ALL STRATEGIES SUMMARY
+================================================================================
+
+TEST CONFIGURATION:
+  Starting Capital:   $1,000.00
+  Test Period:        3 months
+  Granularity:        5m
+  Total Candles:      25850
+  Base Strategies:    57
+  Loss Tolerances:    5
+  Total Tests:        285
+  Test Date:          2025-12-17 16:20:10
+  Elapsed Time:       3408.8 seconds
+  Successful Tests:   285
+  Failed Tests:       0
+
+LOSS TOLERANCE VALUES TESTED:
+  • 0.00%
+  • 0.10%
+  • 0.50%
+  • 1.00%
+  • 2.50%
+
+TOP 50 PERFORMING CONFIGURATIONS:
+==============================================================================================================================================================
+Rank   Strategy                                 Loss Tol   APY_USD    APY_BTC    Trades   Win%     Avg$/Trade   Pos   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      GreedyMom(p=14, patience=288, margin=1.0%)   0.00%     60.71%    484.16%   13        100.0%  $    14.16  LONG  
+2      GreedyMom(p=14, patience=288, margin=1.0%)   0.10%     60.71%    484.16%   13        100.0%  $    14.16  LONG  
+3      GreedyMom(p=14, patience=288, margin=1.0%)   0.50%     60.71%    389.71%   13        100.0%  $     6.36  LONG  
+4      GreedyMom(p=14, patience=288, margin=1.0%)   1.00%     60.71%    389.71%   13        100.0%  $     6.36  LONG  
+5      Momentum(10, 1.0%)                         0.00%     54.87%     66.05%   11        100.0%  $   -25.39  LONG  
+6      Momentum(10, 1.0%)                         0.10%     54.87%     66.05%   11        100.0%  $   -25.39  LONG  
+7      EMA(50/200)                                0.00%     49.21%    129.57%   13        100.0%  $   -14.53  LONG  
+8      Bollinger(20, 2.0σ)                        1.00%     48.26%     91.51%   129        67.2%  $    -2.11  LONG  
+9      MeanRev(20, -2.0σ)                         1.00%     48.26%     91.51%   129        67.2%  $    -2.11  LONG  
+10     EMA(50/200)                                0.10%     46.55%    125.48%   13         83.3%  $   -15.21  LONG  
+11     GreedyEMA(9/21, patience=144, margin=1.0%)   0.00%     43.88%     99.53%   31        100.0%  $    -8.38  LONG  
+12     Momentum(10, 1.0%)                         0.50%     43.50%     -1.50%   3         100.0%  $  -233.83  LONG  
+13     EMA(50/200)                                1.00%     37.14%      8.03%   31         33.3%  $   -16.26  LONG  
+14     Momentum(10, 1.0%)                         1.00%     32.19%     83.37%   25         50.0%  $    -8.75  LONG  
+15     GreedyEMA(9/21, patience=144, margin=1.0%)   0.10%     27.94%     83.22%   35         82.4%  $    -8.48  LONG  
+16     GreedyEMA(12/26, patience=144, margin=1.0%)   0.10%     26.73%     76.22%   23         90.9%  $   -13.94  LONG  
+17     GreedyEMA(12/26, patience=144, margin=1.0%)   0.00%     26.62%     76.06%   21        100.0%  $   -15.35  LONG  
+18     Bollinger(20, 1.5σ)                        0.50%     24.87%     58.32%   133        60.6%  $    -2.63  LONG  
+19     MeanRev(20, -1.5σ)                         0.50%     24.87%     58.32%   133        60.6%  $    -2.63  LONG  
+20     EMA(9/26)                                  0.50%     22.71%     47.23%   295        30.6%  $    -1.29  LONG  
+21     Stochastic(5,3)                            1.00%     21.95%     40.04%   95         57.4%  $    -4.26  LONG  
+22     Stochastic(5,3)                            0.50%     21.60%     30.49%   81         55.0%  $    -5.36  LONG  
+23     EMA(12/26)                                 0.10%     20.24%     67.19%   23         81.8%  $   -14.94  LONG  
+24     EMA(9/26)                                  0.10%     19.56%     71.06%   21         80.0%  $   -15.94  LONG  
+25     Bollinger(20, 1.5σ)                        0.10%     18.03%     25.05%   29         92.9%  $   -15.80  LONG  
+26     MeanRev(20, -1.5σ)                         0.10%     18.03%     25.05%   29         92.9%  $   -15.80  LONG  
+27     EMA(9/21)                                  0.00%     17.94%     34.14%   13        100.0%  $   -34.72  LONG  
+28     GreedyEMA(12/26, patience=144, margin=1.0%)   0.50%     17.85%    196.57%   385        29.2%  $    -0.19  LONG  
+29     EMA(50/200)                                0.50%     17.48%     23.22%   15         28.6%  $   -31.24  LONG  
+30     EMA(9/26)                                  0.00%     15.30%     60.41%   15        100.0%  $   -24.69  LONG  
+31     GreedyEMA(9/21, patience=144, margin=1.0%)   0.50%     15.16%     38.11%   309        29.9%  $    -1.32  LONG  
+32     Momentum(10, 1.0%)                         2.50%     14.88%    195.89%   120        31.7%  $     0.59  SHORT 
+33     Stochastic(14,3)                           1.00%     14.81%     46.73%   119        67.8%  $    -3.24  LONG  
+34     Bollinger(10, 2.0σ)                        2.50%     13.95%      1.18%   129        70.3%  $    -4.10  LONG  
+35     RSI(14, 30/70)                             1.00%     13.90%     46.98%   123        62.3%  $    -3.13  LONG  
+36     EMA(12/26)                                 0.50%     12.83%    183.93%   385        29.2%  $    -0.24  LONG  
+37     Stochastic(14,3)                           2.50%     12.43%     -3.01%   153        67.1%  $    -3.56  LONG  
+38     EMA(12/26)                                 0.00%     12.05%     27.82%   11        100.0%  $   -43.72  LONG  
+39     GreedyMom(p=14, patience=288, margin=1.0%)   2.50%     10.57%    334.05%   18         55.6%  $     2.83  SHORT 
+40     Momentum(10, 2.0%)                         1.00%     10.39%    144.18%   9          50.0%  $   -12.78  LONG  
+41     Momentum(10, 2.0%)                         2.50%     10.39%    144.18%   9          50.0%  $   -12.78  LONG  
+42     MACD(8,17,9)                               0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+43     GreedyMACD(8/17/9, patience=144, margin=0.5%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+44     GreedyMACD(8/17/9, patience=288, margin=0.5%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+45     GreedyMACD(8/17/9, patience=288, margin=0.75%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+46     GreedyMACD(8/17/9, patience=288, margin=1.0%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+47     GreedyMACD(8/17/9, patience=288, margin=1.25%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+48     GreedyMACD(8/17/9, patience=576, margin=0.5%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+49     GreedyMACD(8/17/9, patience=576, margin=0.75%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+50     GreedyMACD(8/17/9, patience=576, margin=1.0%)   0.50%     10.27%     18.24%   541        33.3%  $    -0.87  LONG  
+
+================================================================================
+BEST PERFORMING CONFIGURATION:
+================================================================================
+Strategy:           GreedyMom(p=14, patience=288, margin=1.0%)
+Loss Tolerance:     0.00%
+APY (USD):          60.71%
+APY (BTC):          484.16%
+Value Return:       8.49%
+Baseline Return:    8.49%
+Final Baseline:     $1,084.95
+Starting Value:     $1,000.00
+Current Value:      $1,084.95
+Total Profit:       $84.95
+Total Trades:       13
+Win Rate:           100.0% (6 wins, 0 losses)
+Avg Profit/Trade:   $14.16
+Final Position:     LONG
+
+================================================================================
+BEST CONFIGURATION PER STRATEGY:
+================================================================================
+
+Bollinger(10, 2.0σ):
+  Best Loss Tolerance: 2.50%
+  APY (USD):          13.95%
+  APY (BTC):          1.18%
+  Trades:             129
+  Win Rate:           70.3%
+
+Bollinger(20, 1.5σ):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          24.87%
+  APY (BTC):          58.32%
+  Trades:             133
+  Win Rate:           60.6%
+
+Bollinger(20, 2.0σ):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          48.26%
+  APY (BTC):          91.51%
+  Trades:             129
+  Win Rate:           67.2%
+
+EMA(12/26):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          20.24%
+  APY (BTC):          67.19%
+  Trades:             23
+  Win Rate:           81.8%
+
+EMA(50/200):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          49.21%
+  APY (BTC):          129.57%
+  Trades:             13
+  Win Rate:           100.0%
+
+EMA(9/21):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          17.94%
+  APY (BTC):          34.14%
+  Trades:             13
+  Win Rate:           100.0%
+
+EMA(9/26):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          22.71%
+  APY (BTC):          47.23%
+  Trades:             295
+  Win Rate:           30.6%
+
+GreedyEMA(12/26, patience=144, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          26.73%
+  APY (BTC):          76.22%
+  Trades:             23
+  Win Rate:           90.9%
+
+GreedyEMA(9/21, patience=144, margin=1.0%):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          43.88%
+  APY (BTC):          99.53%
+  Trades:             31
+  Win Rate:           100.0%
+
+GreedyMACD(12/26/9, patience=144, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          8.48%
+  APY (BTC):          23.81%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=144, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=144, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=144, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=288, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          8.48%
+  APY (BTC):          23.81%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=288, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=288, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=288, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=576, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=576, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=576, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(12/26/9, patience=576, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+GreedyMACD(5/13/5, patience=144, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          4.06%
+  APY (BTC):          12.12%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=144, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=144, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=144, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=288, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=288, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=288, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=288, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=576, margin=0.5%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=576, margin=0.75%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=576, margin=1.0%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(5/13/5, patience=576, margin=1.25%):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          3.71%
+  APY (BTC):          11.74%
+  Trades:             29
+  Win Rate:           42.9%
+
+GreedyMACD(8/17/9, patience=144, margin=0.5%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=144, margin=0.75%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          3.67%
+  APY (BTC):          11.16%
+  Trades:             537
+  Win Rate:           33.6%
+
+GreedyMACD(8/17/9, patience=144, margin=1.0%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          3.67%
+  APY (BTC):          11.16%
+  Trades:             537
+  Win Rate:           33.6%
+
+GreedyMACD(8/17/9, patience=144, margin=1.25%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          5.11%
+  APY (BTC):          12.71%
+  Trades:             537
+  Win Rate:           33.6%
+
+GreedyMACD(8/17/9, patience=288, margin=0.5%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=288, margin=0.75%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=288, margin=1.0%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=288, margin=1.25%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=576, margin=0.5%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=576, margin=0.75%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=576, margin=1.0%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMACD(8/17/9, patience=576, margin=1.25%):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+GreedyMom(p=14, patience=288, margin=1.0%):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          60.71%
+  APY (BTC):          484.16%
+  Trades:             13
+  Win Rate:           100.0%
+
+MACD(12,26,9):
+  Best Loss Tolerance: 0.10%
+  APY (USD):          6.99%
+  APY (BTC):          22.11%
+  Trades:             23
+  Win Rate:           63.6%
+
+MACD(8,17,9):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          10.27%
+  APY (BTC):          18.24%
+  Trades:             541
+  Win Rate:           33.3%
+
+MeanRev(20, -1.5σ):
+  Best Loss Tolerance: 0.50%
+  APY (USD):          24.87%
+  APY (BTC):          58.32%
+  Trades:             133
+  Win Rate:           60.6%
+
+MeanRev(20, -2.0σ):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          48.26%
+  APY (BTC):          91.51%
+  Trades:             129
+  Win Rate:           67.2%
+
+Momentum(10, 1.0%):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          54.87%
+  APY (BTC):          66.05%
+  Trades:             11
+  Win Rate:           100.0%
+
+Momentum(10, 2.0%):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          10.39%
+  APY (BTC):          144.18%
+  Trades:             9
+  Win Rate:           50.0%
+
+RSI(14, 20/80):
+  Best Loss Tolerance: 0.00%
+  APY (USD):          1.07%
+  APY (BTC):          2.78%
+  Trades:             3
+  Win Rate:           100.0%
+
+RSI(14, 30/70):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          13.90%
+  APY (BTC):          46.98%
+  Trades:             123
+  Win Rate:           62.3%
+
+RSI(9, 30/70):
+  Best Loss Tolerance: 2.50%
+  APY (USD):          7.77%
+  APY (BTC):          -7.63%
+  Trades:             273
+  Win Rate:           70.6%
+
+Stochastic(14,3):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          14.81%
+  APY (BTC):          46.73%
+  Trades:             119
+  Win Rate:           67.8%
+
+Stochastic(5,3):
+  Best Loss Tolerance: 1.00%
+  APY (USD):          21.95%
+  APY (BTC):          40.04%
+  Trades:             95
+  Win Rate:           57.4%

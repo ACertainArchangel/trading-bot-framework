@@ -519,6 +519,33 @@
                 <div id="min-buy-price" class="stat-value">-</div>
             </div>
 
+            <h2 style="margin-top: 20px;">📊 Performance (APY)</h2>
+            
+            <div class="stat-card">
+                <div class="stat-label">APY (USD)</div>
+                <div id="apy-usd" class="stat-value">0.00%</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">APY (BTC)</div>
+                <div id="apy-btc" class="stat-value">0.00%</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Time Running</div>
+                <div id="elapsed-time" class="stat-value">0s</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Initial USD Baseline</div>
+                <div id="initial-usd-baseline" class="stat-value">$0.00</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Initial BTC Baseline</div>
+                <div id="initial-btc-baseline" class="stat-value">0.00000000</div>
+            </div>
+
             <h2 style="margin-top: 20px;">📈 Trade History</h2>
             <div id="trade-list" class="trade-list"></div>
         </div>
@@ -1149,6 +1176,45 @@
                 currencyEl.textContent = `$${state.currency.toFixed(2)} (+$${profit.toFixed(2)})`;
             } else if (state.position === 'short' && state.currency < 1000) {
                 currencyEl.className = 'stat-value negative';
+            }
+            
+            // Update APY metrics
+            const apyUsdEl = document.getElementById('apy-usd');
+            const apyBtcEl = document.getElementById('apy-btc');
+            
+            if (state.apy_usd !== undefined) {
+                apyUsdEl.textContent = `${state.apy_usd.toFixed(2)}%`;
+                if (state.apy_usd > 0) {
+                    apyUsdEl.className = 'stat-value positive';
+                } else if (state.apy_usd < 0) {
+                    apyUsdEl.className = 'stat-value negative';
+                } else {
+                    apyUsdEl.className = 'stat-value';
+                }
+            }
+            
+            if (state.apy_btc !== undefined) {
+                apyBtcEl.textContent = `${state.apy_btc.toFixed(2)}%`;
+                if (state.apy_btc > 0) {
+                    apyBtcEl.className = 'stat-value positive';
+                } else if (state.apy_btc < 0) {
+                    apyBtcEl.className = 'stat-value negative';
+                } else {
+                    apyBtcEl.className = 'stat-value';
+                }
+            }
+            
+            // Update elapsed time
+            if (state.elapsed_time !== undefined) {
+                document.getElementById('elapsed-time').textContent = state.elapsed_time;
+            }
+            
+            // Update initial baselines
+            if (state.initial_usd_baseline !== undefined) {
+                document.getElementById('initial-usd-baseline').textContent = `$${state.initial_usd_baseline.toFixed(2)}`;
+            }
+            if (state.initial_crypto_baseline !== undefined) {
+                document.getElementById('initial-btc-baseline').textContent = state.initial_crypto_baseline.toFixed(8);
             }
         }
 

@@ -11,14 +11,23 @@ class CoinbaseAdvancedTradeInterface(Interface):
     """
     Live trading interface for Coinbase Advanced Trade API.
     Uses the new API format with name (key name) and privateKey (EC private key).
+    
+    Note: This interface syncs FROM the exchange. Call connect_to_exchange()
+    to fetch and populate currency, asset, and position attributes.
     """
     
-    def __init__(self, api_key_name: str = None, api_private_key: str = None):
+    def __init__(self, api_key_name: str = None, api_private_key: str = None, pair: str = "BTC-USD"):
         super().__init__()
         self.api_key_name = api_key_name
         self.api_private_key = api_private_key
+        self.pair = pair
         self.base_url = "https://api.coinbase.com"
         self.connected = False
+        
+        # These will be set by connect_to_exchange()
+        self.currency = 0.0
+        self.asset = 0.0
+        self.position = "short"
 
     def __str__(self):
         return f"CoinbaseAdvancedTradeInterface(connected={self.connected})"
@@ -53,13 +62,27 @@ class CoinbaseAdvancedTradeInterface(Interface):
         return response.json()
 
     def connect_to_exchange(self):
-        """Test connection by fetching accounts"""
+        """
+        Connect to exchange and fetch current balances.
+        Populates currency, asset, and position attributes.
+        """
         if not all([self.api_key_name, self.api_private_key]):
             raise ValueError("API credentials not set")
         
         try:
             result = self._make_request('GET', '/api/v3/brokerage/accounts')
             self.connected = True
+            
+            # Fetch and set balances
+            self.currency = self.fetch_exchange_balance_currency()
+            self.asset = self.fetch_exchange_balance_asset()
+            
+            # Determine position based on what we're holding
+            if self.asset > 0.0001:  # Has meaningful crypto (> dust)
+                self.position = "long"
+            else:
+                self.position = "short"
+            
             return result
         except Exception as e:
             raise ConnectionError(f"Failed to connect to Coinbase: {e}")
@@ -73,23 +96,23 @@ class CoinbaseAdvancedTradeInterface(Interface):
         asset_code = bot.pair.split('-')[0]
         
         # Allow for dust and rounding errors
-        # USD: tolerance of $0.01
-        # BTC: tolerance of 0.00001 BTC (dust + rounding)
-        currency_tolerance = 0.01  # $0.01 for USD
-        asset_tolerance = 0.00001  # Allow for dust amounts
+    def fetch_exchange_balance_currency(self) -> float:
+        """Fetch currency (quote) balance from exchange (USD only, not USDC)"""
+        currency_code = self.pair.split('-')[1]  # 'USD' from 'BTC-USD'
+        result = self._make_request('GET', '/api/v3/brokerage/accounts')
         
-        currency_diff = abs(bot.currency - currency_balance)
-        asset_diff = abs(bot.asset - asset_balance)
-        
-        if currency_diff > currency_tolerance:
-            raise AssertionError(f"Currency mismatch: Bot={bot.currency}, Exchange={currency_balance}, Diff={currency_diff}")
-        
+        for account in result.get('accounts', []):
+            # Exact match only - USD not USDC
+            if account['currency'] == currency_code:
+                available = float(account['available_balance']['value'])
+                hold = float(account['hold']['value']) if 'hold' in account else 0.0
+                balance = available + hold
         if asset_diff > asset_tolerance:
             raise AssertionError(f"Asset mismatch: Bot={bot.asset}, Exchange={asset_balance}, Diff={asset_diff}")
 
     def fetch_exchange_balance_currency(self) -> float:
         """Fetch currency (quote) balance from exchange (USD only, not USDC)"""
-        currency_code = self.bot.pair.split('-')[1]  # 'USD' from 'BTC-USD'
+        currency_code = self.pair.split('-')[1]  # 'USD' from 'BTC-USD'
         result = self._make_request('GET', '/api/v3/brokerage/accounts')
         
         for account in result.get('accounts', []):
@@ -104,7 +127,7 @@ class CoinbaseAdvancedTradeInterface(Interface):
 
     def fetch_exchange_balance_asset(self) -> float:
         """Fetch asset (base) balance from exchange"""
-        asset_code = self.bot.pair.split('-')[0]
+        asset_code = self.pair.split('-')[0]
         result = self._make_request('GET', '/api/v3/brokerage/accounts')
         
         for account in result.get('accounts', []):
@@ -144,7 +167,7 @@ class CoinbaseAdvancedTradeInterface(Interface):
         # Place LIMIT order (maker - gets 0.025% fee)
         order_data = {
             "client_order_id": f"buy_{int(time.time())}",
-            "product_id": self.bot.pair,
+            "product_id": self.pair,
             "side": "BUY",
             "order_configuration": {
                 "limit_limit_gtc": {
@@ -244,7 +267,7 @@ class CoinbaseAdvancedTradeInterface(Interface):
         # Place LIMIT order (maker - gets 0.025% fee)
         order_data = {
             "client_order_id": f"sell_{int(time.time())}",
-            "product_id": self.bot.pair,
+            "product_id": self.pair,
             "side": "SELL",
             "order_configuration": {
                 "limit_limit_gtc": {

@@ -24,13 +24,16 @@ from strategies.mean_reversion import MeanReversionStrategy
 from strategies.momentum import MomentumStrategy
 from strategies.macd import MACDStrategy
 from backtest_lib import load_historical_data, parallel_backtest_runner
-from tqdm import tqdm
 import json
 
 # Create backtest results directory if it doesn't exist
 RESULTS_DIR = 'backtest_results'
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
+# How many days in the past the test period should END
+# 0 = end now, 90 = end 90 days ago (so 3-month test would be 6-3 months ago)
+AGE_DAYS = 180
+DAYS = 180
 
 def main():
     print("=" * 80)
@@ -40,7 +43,7 @@ def main():
     
     # Test parameters
     starting_currency = 1000.0
-    months = 3
+    months = DAYS // 30  # Approximate number of months
     
     # Define loss tolerance values to test for each strategy
     loss_tolerances = [
@@ -54,7 +57,7 @@ def main():
     # Load historical data once (shared across all tests)
     import time
     start_load = time.time()
-    candles = load_historical_data(months=months, granularity='5m')
+    candles = load_historical_data(months=months, granularity='5m', age_days=AGE_DAYS)
     load_time = time.time() - start_load
     print(f"⏱️  Data loading took {load_time:.1f} seconds")
     print()
@@ -315,14 +318,14 @@ def main():
         return
     
     # Print results table
-    print("=" * 158)
+    print("=" * 180)
     print("📈 TOP 30 PERFORMERS")
-    print("=" * 158)
+    print("=" * 180)
     print()
     
     print(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'APY_USD':<10} {'APY_BTC':<10} "
-          f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Final$':<12} {'Pos':<6}")
-    print("-" * 158)
+          f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Final$':<12} {'Idle':<12} {'Pos':<6}")
+    print("-" * 180)
     
     for i, result in enumerate(successful_results[:30], 1):
         print(f"{i:<6} {result.get('strategy_name', 'Unknown'):<40} {result.get('loss_tolerance_pct', 0):>6.2f}%   "
@@ -342,20 +345,28 @@ def main():
     print("=" * 80)
     print("🏆 BEST PERFORMING CONFIGURATION")
     print("=" * 80)
-    print(f"Strategy:           {best.get('strategy_name', 'Unknown')}")
-    print(f"Loss Tolerance:     {best.get('loss_tolerance_pct', 0):.2f}%")
-    print(f"APY (USD):          {best.get('apy_usd', 0):.2f}%")
-    print(f"APY (BTC):          {best.get('apy_btc', 0):.2f}%")
-    print(f"Value Return:       {best.get('value_return_pct', 0):.2f}%")
-    print(f"Baseline Return:    {best.get('baseline_return_pct', 0):.2f}%")
-    print(f"Final Baseline:     ${best.get('final_baseline', 0):.2f}")
-    print(f"Starting Value:     ${starting_currency:.2f}")
-    print(f"Current Value:      ${best.get('current_value', 0):.2f}")
-    print(f"Total Profit:       ${best.get('current_value', 0) - starting_currency:.2f}")
-    print(f"Total Trades:       {best.get('trades', 0)}")
-    print(f"Win Rate:           {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)")
-    print(f"Avg Profit/Trade:   ${best.get('avg_profit_per_trade', 0):.2f}")
-    print(f"Final Position:     {best.get('final_position', 'unknown').upper()}")
+    print(f"Strategy:                {best.get('strategy_name', 'Unknown')}")
+    print(f"Loss Tolerance:          {best.get('loss_tolerance_pct', 0):.2f}%")
+    print()
+    print(f"APY (USD):               {best.get('apy_usd', 0):.2f}%")
+    print(f"APY (BTC):               {best.get('apy_btc', 0):.2f}%")
+    print(f"Value Return:            {best.get('value_return_pct', 0):.2f}%")
+    print(f"Baseline Return (USD):   {best.get('baseline_return_usd_pct', 0):.2f}%")
+    print(f"Baseline Return (BTC):   {best.get('baseline_return_btc_pct', 0):.2f}%")
+    print()
+    print(f"Initial USD Baseline:    ${best.get('initial_usd_baseline', 0):.2f}")
+    print(f"Final USD Baseline:      ${best.get('final_usd_baseline', 0):.2f}")
+    print(f"Initial BTC Baseline:    {best.get('initial_crypto_baseline', 0):.8f} BTC")
+    print(f"Final BTC Baseline:      {best.get('final_crypto_baseline', 0):.8f} BTC")
+    print()
+    print(f"Starting Value:          ${starting_currency:.2f}")
+    print(f"Current Value:           ${best.get('current_value', 0):.2f}")
+    print(f"Total Profit:            ${best.get('current_value', 0) - starting_currency:.2f}")
+    print(f"Total Trades:            {best.get('trades', 0)}")
+    print(f"Win Rate:                {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)")
+    print(f"Avg Profit/Trade:        ${best.get('avg_profit_per_trade', 0):.2f}")
+    print(f"Longest Idle Time:       {best.get('longest_idle_time', 'N/A')}")
+    print(f"Final Position:          {best.get('final_position', 'unknown').upper()}")
     print()
     
     # Save results to JSON
@@ -404,33 +415,39 @@ def main():
         f.write("\n")
         
         f.write("TOP 50 PERFORMING CONFIGURATIONS:\n")
-        f.write("=" * 158 + "\n")
+        f.write("=" * 180 + "\n")
         f.write(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'APY_USD':<10} {'APY_BTC':<10} "
-               f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Pos':<6}\n")
-        f.write("-" * 158 + "\n")
+               f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Idle':<12} {'Pos':<6}\n")
+        f.write("-" * 180 + "\n")
         
         for i, result in enumerate(successful_results[:50], 1):
             f.write(f"{i:<6} {result.get('strategy_name', 'Unknown'):<40} {result.get('loss_tolerance_pct', 0):>6.2f}%   "
                    f"{result.get('apy_usd', 0):>7.2f}%   {result.get('apy_btc', 0):>7.2f}%   "
                    f"{result.get('trades', 0):<8} {result.get('win_rate', 0):>6.1f}%  "
-                   f"${result.get('avg_profit_per_trade', 0):>9.2f}  {result.get('final_position', 'unknown').upper():<6}\n")
-        
+                   f"${result.get('avg_profit_per_trade', 0):>9.2f}  {result.get('longest_idle_time', 'N/A'):<12} "
+                   f"{result.get('final_position', 'unknown').upper():<6}\n")
         f.write("\n" + "=" * 80 + "\n")
         f.write("BEST PERFORMING CONFIGURATION:\n")
         f.write("=" * 80 + "\n")
-        f.write(f"Strategy:           {best.get('strategy_name', 'Unknown')}\n")
-        f.write(f"Loss Tolerance:     {best.get('loss_tolerance_pct', 0):.2f}%\n")
-        f.write(f"APY (USD):          {best.get('apy_usd', 0):.2f}%\n")
-        f.write(f"APY (BTC):          {best.get('apy_btc', 0):.2f}%\n")
-        f.write(f"Value Return:       {best.get('value_return_pct', 0):.2f}%\n")
-        f.write(f"Baseline Return:    {best.get('baseline_return_pct', 0):.2f}%\n")
-        f.write(f"Final Baseline:     ${best.get('final_baseline', 0):,.2f}\n")
-        f.write(f"Starting Value:     ${starting_currency:,.2f}\n")
-        f.write(f"Current Value:      ${best.get('current_value', 0):,.2f}\n")
-        f.write(f"Total Profit:       ${best.get('current_value', 0) - starting_currency:,.2f}\n")
-        f.write(f"Total Trades:       {best.get('trades', 0)}\n")
-        f.write(f"Win Rate:           {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)\n")
-        f.write(f"Avg Profit/Trade:   ${best.get('avg_profit_per_trade', 0):,.2f}\n")
+        f.write(f"Strategy:                {best.get('strategy_name', 'Unknown')}\n")
+        f.write(f"Loss Tolerance:          {best.get('loss_tolerance_pct', 0):.2f}%\n\n")
+        f.write(f"APY (USD):               {best.get('apy_usd', 0):.2f}%\n")
+        f.write(f"APY (BTC):               {best.get('apy_btc', 0):.2f}%\n")
+        f.write(f"Value Return:            {best.get('value_return_pct', 0):.2f}%\n")
+        f.write(f"Baseline Return (USD):   {best.get('baseline_return_usd_pct', 0):.2f}%\n")
+        f.write(f"Baseline Return (BTC):   {best.get('baseline_return_btc_pct', 0):.2f}%\n\n")
+        f.write(f"Initial USD Baseline:    ${best.get('initial_usd_baseline', 0):,.2f}\n")
+        f.write(f"Final USD Baseline:      ${best.get('final_usd_baseline', 0):,.2f}\n")
+        f.write(f"Initial BTC Baseline:    {best.get('initial_crypto_baseline', 0):.8f} BTC\n")
+        f.write(f"Final BTC Baseline:      {best.get('final_crypto_baseline', 0):.8f} BTC\n\n")
+        f.write(f"Starting Value:          ${starting_currency:,.2f}\n")
+        f.write(f"Current Value:           ${best.get('current_value', 0):,.2f}\n")
+        f.write(f"Total Profit:            ${best.get('current_value', 0) - starting_currency:,.2f}\n")
+        f.write(f"Total Trades:            {best.get('trades', 0)}\n")
+        f.write(f"Win Rate:                {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)\n")
+        f.write(f"Avg Profit/Trade:        ${best.get('avg_profit_per_trade', 0):,.2f}\n")
+        f.write(f"Longest Idle Time:       {best.get('longest_idle_time', 'N/A')}\n")
+        f.write(f"Final Position:          {best.get('final_position', 'unknown').upper()}\n")
         f.write(f"Final Position:     {best.get('final_position', 'unknown').upper()}\n")
         
         # Add breakdown by strategy type
@@ -440,14 +457,15 @@ def main():
         
         # Group results by base strategy name (without loss tolerance)
         strategy_best = {}
-        for result in successful_results:
-            base_name = result.get('strategy_name', 'Unknown')
-            if base_name not in strategy_best:
-                strategy_best[base_name] = result
-        
         for strategy_name in sorted(strategy_best.keys()):
             result = strategy_best[strategy_name]
             f.write(f"\n{strategy_name}:\n")
+            f.write(f"  Best Loss Tolerance: {result.get('loss_tolerance_pct', 0):.2f}%\n")
+            f.write(f"  APY (USD):          {result.get('apy_usd', 0):.2f}%\n")
+            f.write(f"  APY (BTC):          {result.get('apy_btc', 0):.2f}%\n")
+            f.write(f"  Trades:             {result.get('trades', 0)}\n")
+            f.write(f"  Win Rate:           {result.get('win_rate', 0):.1f}%\n")
+            f.write(f"  Longest Idle:       {result.get('longest_idle_time', 'N/A')}\n")
             f.write(f"  Best Loss Tolerance: {result.get('loss_tolerance_pct', 0):.2f}%\n")
             f.write(f"  APY (USD):          {result.get('apy_usd', 0):.2f}%\n")
             f.write(f"  APY (BTC):          {result.get('apy_btc', 0):.2f}%\n")

@@ -39,6 +39,7 @@ from strategies.greedy_momentum import GreedyMomentumStrategy
 from strategies.macd import MACDStrategy
 from strategies.rsi import RSIStrategy
 from strategies.bollinger import BollingerStrategy
+from strategies.greedy_macd import GreedyMACDStrategy
 
 # Strategy registry mapping names to classes
 STRATEGIES = {
@@ -48,7 +49,8 @@ STRATEGIES = {
     'greedy_momentum': GreedyMomentumStrategy,
     'macd': MACDStrategy,
     'rsi': RSIStrategy,
-    'bollinger': BollingerStrategy
+    'bollinger': BollingerStrategy,
+    'greedy_macd': GreedyMACDStrategy
 }
 
 
@@ -126,17 +128,15 @@ def run_test_bot(args):
     main_logger("=" * 80)
     main_logger("")
     
-    # Create paper trading interface
-    interface = PaperTradingInterface()
-    
-    # Create bot with specified configuration
+    # Create paper trading interface with starting balance
     main_logger("🤖 Initializing trading bot...")
+    interface = PaperTradingInterface(starting_currency=args.starting_currency, starting_asset=0.0)
+    
+    # Create bot (it will sync from interface)
     bot = Bot(
         interface=interface,
         strategy=strategy_class,
         pair="BTC-USD",
-        starting_currency=args.starting_currency,
-        starting_asset=0.0,
         fee_rate=args.fee_rate,
         fee_in_percent=True,
         loss_tolerance=args.loss_tolerance,
@@ -183,6 +183,24 @@ def run_test_bot(args):
     )
     
     main_logger(f"✅ Test stream initialized")
+    
+    # Get initial price from first candle for baseline calculations
+    candles = ticker_stream.get_candles()
+    if candles and len(candles) > 0:
+        initial_price = candles[0][4]  # Close price of first candle
+        main_logger(f"💵 Initial price: ${initial_price:.2f}")
+        # Update bot with initial price for baseline calculations
+        bot.initial_price = initial_price
+        # Recalculate baselines if they weren't set properly
+        if bot.initial_crypto_baseline == 0.0 and bot.position == "short":
+            bot.asset_baseline = bot.currency / initial_price
+            bot.initial_crypto_baseline = bot.asset_baseline
+            main_logger(f"✓ Crypto baseline calculated: {bot.initial_crypto_baseline:.8f} BTC")
+        elif bot.initial_usd_baseline == 0.0 and bot.position == "long":
+            bot.currency_baseline = bot.asset * initial_price
+            bot.initial_usd_baseline = bot.currency_baseline
+            main_logger(f"✓ USD baseline calculated: ${bot.initial_usd_baseline:.2f}")
+    main_logger("")
     main_logger(f"🎬 Playback speed: {args.playback_speed}x")
     main_logger("")
     main_logger(f"💡 STRATEGY: {bot.strategy.name}")
