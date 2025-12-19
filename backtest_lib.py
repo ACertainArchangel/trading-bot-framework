@@ -80,37 +80,43 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
     initial_usd_baseline = bot.initial_usd_baseline
     initial_crypto_baseline = bot.initial_crypto_baseline
     
-    # Calculate current value based on position
+    # Calculate current portfolio value based on position
     if bot.position == "short":
-        current_value = bot.currency
+        current_portfolio_usd = bot.currency
+        current_portfolio_btc = bot.currency / current_price if current_price > 0 else 0
     else:
-        current_value = bot.asset * current_price
+        current_portfolio_usd = bot.asset * current_price
+        current_portfolio_btc = bot.asset
     
-    # Calculate APY using dual baselines - use safe calculation to avoid overflow
-    import math
-    apy_usd = 0.0
+    # Calculate APY metrics:
+    # - Real APY: actual portfolio value change in USD terms
+    # - BTC APY: portfolio value change in BTC terms (positive = outperforming BTC)
+    real_apy = 0.0
     apy_btc = 0.0
     
     # Convert years to seconds for period comparison  
     total_seconds = years * 365.25 * 24 * 3600
     
+    # Real APY: (current_portfolio_usd / initial_usd) - 1, annualized
     if initial_usd_baseline > 0 and years > 0:
         try:
-            ratio = final_usd_baseline / initial_usd_baseline
+            ratio = current_portfolio_usd / initial_usd_baseline
             # For periods < 1 day, use simple linear extrapolation to avoid overflow
             if total_seconds < 86400:  # Less than 1 day
                 return_pct = (ratio - 1) * 100
-                apy_usd = return_pct * (365.25 * 24 * 3600 / total_seconds)
+                real_apy = return_pct * (365.25 * 24 * 3600 / total_seconds)
             else:
                 # For longer periods, use proper compound APY
                 if ratio > 0:
-                    apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                    real_apy = ((ratio ** (1 / years)) - 1) * 100
         except (OverflowError, ValueError):
-            apy_usd = 0.0
+            real_apy = 0.0
     
+    # BTC APY: how much has your BTC holdings increased?
+    # Positive = outperforming just holding BTC
     if initial_crypto_baseline > 0 and years > 0:
         try:
-            ratio = final_crypto_baseline / initial_crypto_baseline
+            ratio = current_portfolio_btc / initial_crypto_baseline
             # For periods < 1 day, use simple linear extrapolation to avoid overflow  
             if total_seconds < 86400:  # Less than 1 day
                 return_pct = (ratio - 1) * 100
@@ -123,16 +129,15 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
             apy_btc = 0.0
     
     # Calculate return percentages
-    value_return = ((current_value - initial_usd_baseline) / initial_usd_baseline) * 100
-    baseline_return_usd = ((final_usd_baseline - initial_usd_baseline) / initial_usd_baseline) * 100
-    baseline_return_btc = ((final_crypto_baseline - initial_crypto_baseline) / initial_crypto_baseline) * 100
+    value_return = ((current_portfolio_usd - initial_usd_baseline) / initial_usd_baseline) * 100
+    btc_return = ((current_portfolio_btc - initial_crypto_baseline) / initial_crypto_baseline) * 100
     
     # Calculate win rate based on complete cycles
     complete_cycles = wins + losses
     win_rate = (wins / complete_cycles * 100) if complete_cycles > 0 else 0
     
     # Calculate average profit per complete cycle
-    total_profit = current_value - initial_usd_baseline
+    total_profit = current_portfolio_usd - initial_usd_baseline
     avg_profit = total_profit / complete_cycles if complete_cycles > 0 else 0
     
     # Calculate longest idle time
@@ -154,11 +159,11 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
         'initial_crypto_baseline': initial_crypto_baseline,
         'final_usd_baseline': final_usd_baseline,
         'final_crypto_baseline': final_crypto_baseline,
-        'current_value': current_value,
-        'baseline_return_usd_pct': baseline_return_usd,
-        'baseline_return_btc_pct': baseline_return_btc,
+        'current_portfolio_usd': current_portfolio_usd,
+        'current_portfolio_btc': current_portfolio_btc,
         'value_return_pct': value_return,
-        'apy_usd': apy_usd,
+        'btc_return_pct': btc_return,
+        'real_apy': real_apy,
         'apy_btc': apy_btc,
         'trades': trades,
         'wins': wins,
@@ -392,7 +397,7 @@ def parallel_backtest_runner(test_configs: List[Dict[str, Any]], candles: List,
             loss_tol_pct = result.get('loss_tolerance_pct', result['loss_tolerance'] * 100)
             
             print(f"  [{i}/{len(results)}] {strategy_name} @ {loss_tol_pct:.2f}% loss → "
-                  f"APY_USD: {result['apy_usd']:.1f}%, Trades: {result['trades']}, "
+                  f"Real_APY: {result['real_apy']:.1f}%, Trades: {result['trades']}, "
                   f"Rejected: {result['rejected_buys']}B/{result['rejected_sells']}S")
         else:
             print(f"  [{i}/{len(results)}] FAILED: {result.get('error', 'Unknown error')}")

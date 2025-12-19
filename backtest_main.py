@@ -310,10 +310,10 @@ def main():
     print(f"⚡ Average time per test: {elapsed_time/len(test_configs):.1f} seconds")
     print()
     
-    # Sort results by USD APY
+    # Sort results by Real APY
     successful_results = [r for r in results if r.get('success', False)]
     failed_results = [r for r in results if not r.get('success', False)]
-    successful_results.sort(key=lambda x: x.get('apy_usd', 0), reverse=True)
+    successful_results.sort(key=lambda x: x.get('real_apy', 0), reverse=True)
     
     if not successful_results:
         print("❌ No successful backtests completed")
@@ -325,15 +325,15 @@ def main():
     print("=" * 180)
     print()
     
-    print(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'APY_USD':<10} {'APY_BTC':<10} "
+    print(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'Real_APY':<10} {'BTC_APY':<10} "
           f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Final$':<12} {'Idle':<12} {'Pos':<6}")
     print("-" * 180)
     
     for i, result in enumerate(successful_results[:30], 1):
         print(f"{i:<6} {result.get('strategy_name', 'Unknown'):<40} {result.get('loss_tolerance_pct', 0):>6.2f}%   "
-              f"{result.get('apy_usd', 0):>7.2f}%   {result.get('apy_btc', 0):>7.2f}%   "
+              f"{result.get('real_apy', 0):>7.2f}%   {result.get('apy_btc', 0):>7.2f}%   "
               f"{result.get('trades', 0):>6}   {result.get('win_rate', 0):>6.1f}%  "
-              f"${result.get('avg_profit_per_trade', 0):>9.2f}   ${result.get('current_value', 0):>10.2f}  "
+              f"${result.get('avg_profit_per_trade', 0):>9.2f}   ${result.get('current_portfolio_usd', 0):>10.2f}  "
               f"{result.get('final_position', 'unknown').upper():<6}")
     
     print()
@@ -350,11 +350,10 @@ def main():
     print(f"Strategy:                {best.get('strategy_name', 'Unknown')}")
     print(f"Loss Tolerance:          {best.get('loss_tolerance_pct', 0):.2f}%")
     print()
-    print(f"APY (USD):               {best.get('apy_usd', 0):.2f}%")
-    print(f"APY (BTC):               {best.get('apy_btc', 0):.2f}%")
+    print(f"Real APY (USD):          {best.get('real_apy', 0):.2f}%")
+    print(f"BTC APY:                 {best.get('apy_btc', 0):.2f}%")
     print(f"Value Return:            {best.get('value_return_pct', 0):.2f}%")
-    print(f"Baseline Return (USD):   {best.get('baseline_return_usd_pct', 0):.2f}%")
-    print(f"Baseline Return (BTC):   {best.get('baseline_return_btc_pct', 0):.2f}%")
+    print(f"BTC Return:              {best.get('btc_return_pct', 0):.2f}%")
     print()
     print(f"Initial USD Baseline:    ${best.get('initial_usd_baseline', 0):.2f}")
     print(f"Final USD Baseline:      ${best.get('final_usd_baseline', 0):.2f}")
@@ -362,8 +361,8 @@ def main():
     print(f"Final BTC Baseline:      {best.get('final_crypto_baseline', 0):.8f} BTC")
     print()
     print(f"Starting Value:          ${starting_currency:.2f}")
-    print(f"Current Value:           ${best.get('current_value', 0):.2f}")
-    print(f"Total Profit:            ${best.get('current_value', 0) - starting_currency:.2f}")
+    print(f"Current Value:           ${best.get('current_portfolio_usd', 0):.2f}")
+    print(f"Total Profit:            ${best.get('current_portfolio_usd', 0) - starting_currency:.2f}")
     print(f"Total Trades:            {best.get('trades', 0)}")
     print(f"Win Rate:                {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)")
     print(f"Avg Profit/Trade:        ${best.get('avg_profit_per_trade', 0):.2f}")
@@ -418,13 +417,13 @@ def main():
         
         f.write("TOP 50 PERFORMING CONFIGURATIONS:\n")
         f.write("=" * 180 + "\n")
-        f.write(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'APY_USD':<10} {'APY_BTC':<10} "
+        f.write(f"{'Rank':<6} {'Strategy':<40} {'Loss Tol':<10} {'Real_APY':<10} {'BTC_APY':<10} "
                f"{'Trades':<8} {'Win%':<8} {'Avg$/Trade':<12} {'Idle':<12} {'Pos':<6}\n")
         f.write("-" * 180 + "\n")
         
         for i, result in enumerate(successful_results[:50], 1):
             f.write(f"{i:<6} {result.get('strategy_name', 'Unknown'):<40} {result.get('loss_tolerance_pct', 0):>6.2f}%   "
-                   f"{result.get('apy_usd', 0):>7.2f}%   {result.get('apy_btc', 0):>7.2f}%   "
+                   f"{result.get('real_apy', 0):>7.2f}%   {result.get('apy_btc', 0):>7.2f}%   "
                    f"{result.get('trades', 0):<8} {result.get('win_rate', 0):>6.1f}%  "
                    f"${result.get('avg_profit_per_trade', 0):>9.2f}  {result.get('longest_idle_time', 'N/A'):<12} "
                    f"{result.get('final_position', 'unknown').upper():<6}\n")
@@ -433,24 +432,22 @@ def main():
         f.write("=" * 80 + "\n")
         f.write(f"Strategy:                {best.get('strategy_name', 'Unknown')}\n")
         f.write(f"Loss Tolerance:          {best.get('loss_tolerance_pct', 0):.2f}%\n\n")
-        f.write(f"APY (USD):               {best.get('apy_usd', 0):.2f}%\n")
-        f.write(f"APY (BTC):               {best.get('apy_btc', 0):.2f}%\n")
+        f.write(f"Real APY (USD):          {best.get('real_apy', 0):.2f}%\n")
+        f.write(f"BTC APY:                 {best.get('apy_btc', 0):.2f}%\n")
         f.write(f"Value Return:            {best.get('value_return_pct', 0):.2f}%\n")
-        f.write(f"Baseline Return (USD):   {best.get('baseline_return_usd_pct', 0):.2f}%\n")
-        f.write(f"Baseline Return (BTC):   {best.get('baseline_return_btc_pct', 0):.2f}%\n\n")
+        f.write(f"BTC Return:              {best.get('btc_return_pct', 0):.2f}%\n\n")
         f.write(f"Initial USD Baseline:    ${best.get('initial_usd_baseline', 0):,.2f}\n")
         f.write(f"Final USD Baseline:      ${best.get('final_usd_baseline', 0):,.2f}\n")
         f.write(f"Initial BTC Baseline:    {best.get('initial_crypto_baseline', 0):.8f} BTC\n")
         f.write(f"Final BTC Baseline:      {best.get('final_crypto_baseline', 0):.8f} BTC\n\n")
         f.write(f"Starting Value:          ${starting_currency:,.2f}\n")
-        f.write(f"Current Value:           ${best.get('current_value', 0):,.2f}\n")
-        f.write(f"Total Profit:            ${best.get('current_value', 0) - starting_currency:,.2f}\n")
+        f.write(f"Current Value:           ${best.get('current_portfolio_usd', 0):,.2f}\n")
+        f.write(f"Total Profit:            ${best.get('current_portfolio_usd', 0) - starting_currency:,.2f}\n")
         f.write(f"Total Trades:            {best.get('trades', 0)}\n")
         f.write(f"Win Rate:                {best.get('win_rate', 0):.1f}% ({best.get('wins', 0)} wins, {best.get('losses', 0)} losses)\n")
         f.write(f"Avg Profit/Trade:        ${best.get('avg_profit_per_trade', 0):,.2f}\n")
         f.write(f"Longest Idle Time:       {best.get('longest_idle_time', 'N/A')}\n")
         f.write(f"Final Position:          {best.get('final_position', 'unknown').upper()}\n")
-        f.write(f"Final Position:     {best.get('final_position', 'unknown').upper()}\n")
         
         # Add breakdown by strategy type
         f.write("\n" + "=" * 80 + "\n")
@@ -463,16 +460,11 @@ def main():
             result = strategy_best[strategy_name]
             f.write(f"\n{strategy_name}:\n")
             f.write(f"  Best Loss Tolerance: {result.get('loss_tolerance_pct', 0):.2f}%\n")
-            f.write(f"  APY (USD):          {result.get('apy_usd', 0):.2f}%\n")
-            f.write(f"  APY (BTC):          {result.get('apy_btc', 0):.2f}%\n")
+            f.write(f"  Real APY (USD):     {result.get('real_apy', 0):.2f}%\n")
+            f.write(f"  BTC APY:            {result.get('apy_btc', 0):.2f}%\n")
             f.write(f"  Trades:             {result.get('trades', 0)}\n")
             f.write(f"  Win Rate:           {result.get('win_rate', 0):.1f}%\n")
             f.write(f"  Longest Idle:       {result.get('longest_idle_time', 'N/A')}\n")
-            f.write(f"  Best Loss Tolerance: {result.get('loss_tolerance_pct', 0):.2f}%\n")
-            f.write(f"  APY (USD):          {result.get('apy_usd', 0):.2f}%\n")
-            f.write(f"  APY (BTC):          {result.get('apy_btc', 0):.2f}%\n")
-            f.write(f"  Trades:             {result.get('trades', 0)}\n")
-            f.write(f"  Win Rate:           {result.get('win_rate', 0):.1f}%\n")
     
     print(f"📁 Results saved to:")
     print(f"   JSON: {json_file}")

@@ -14,6 +14,11 @@ Trading Logic:
 
 This helps capture small gains during sideways/ranging markets where full momentum
 signals may not trigger.
+
+ECONOMICS-AWARE:
+- Strategy now has direct access to fee_rate and loss_tolerance
+- Uses would_be_profitable_buy/sell() to check profitability BEFORE signaling
+- No more rejected trades - signals are only generated for profitable trades
 """
 
 from typing import List
@@ -26,11 +31,14 @@ class GreedyMomentumStrategy(Strategy):
     
     Combines momentum signals with greedy profit-taking when trades haven't happened
     for a while.
+    
+    Now economics-aware: checks profitability including fees before signaling.
     """
     
     def __init__(self, bot, period: int = 10, buy_threshold: float = 2.0, 
                  sell_threshold: float = -2.0, profit_margin: float = 0.5,
-                 patience_candles: int = 288):
+                 patience_candles: int = 288, fee_rate: float = 0.0,
+                 loss_tolerance: float = 0.0):
         """
         Initialize Greedy Momentum strategy.
         
@@ -41,8 +49,10 @@ class GreedyMomentumStrategy(Strategy):
             sell_threshold: ROC % threshold for normal sell signal (default -2.0%)
             profit_margin: % above break-even to trigger greedy trade (default 0.5%)
             patience_candles: Candles to wait before becoming greedy (default 288 = 1 day at 5min)
+            fee_rate: Trading fee rate as decimal (e.g., 0.0025 for 0.25%)
+            loss_tolerance: Max acceptable loss as decimal (e.g., 0.0 for no losses)
         """
-        super().__init__(bot)
+        super().__init__(bot, fee_rate=fee_rate, loss_tolerance=loss_tolerance)
         self.period = period
         self.buy_threshold = buy_threshold
         self.sell_threshold = sell_threshold
@@ -62,7 +72,7 @@ class GreedyMomentumStrategy(Strategy):
     def __str__(self):
         return (f"GreedyMomentum({self.period}, buy={self.buy_threshold}%, "
                 f"sell={self.sell_threshold}%, margin={self.profit_margin}%, "
-                f"patience={self.patience_candles})")
+                f"patience={self.patience_candles}, fee={self.fee_rate*100:.3f}%)")
     
     def calculate_roc(self, prices: List[float]) -> float:
         """
@@ -93,7 +103,7 @@ class GreedyMomentumStrategy(Strategy):
     
     def is_price_profitable(self, current_price: float) -> bool:
         """
-        Check if current price would allow a profitable trade.
+        Check if current price would allow a profitable trade INCLUDING FEES.
         
         Args:
             current_price: Current market price
@@ -102,7 +112,9 @@ class GreedyMomentumStrategy(Strategy):
             True if price is above profitable threshold for current position
         """
         if self.bot.position == "short":
-            # Holding USD - check if we can buy profitably
+            # Holding USD - check if we can buy and later sell profitably
+            # Need: current_price >= last_sell_price * (1 + profit_margin)
+            # AND: the trade must beat our baseline after fees
             if self.last_sell_price is None:
                 return False
             profitable_buy_price = self.last_sell_price * (1 + self.profit_margin / 100)
@@ -119,11 +131,13 @@ class GreedyMomentumStrategy(Strategy):
         Greedy buy: If holding USD and been waiting, buy when price crosses slightly
         above where we last sold (indicating we can make a quick profit).
         
+        Now checks would_be_profitable_buy() to ensure trade beats baseline after fees.
+        
         Args:
             current_price: Current market price
             
         Returns:
-            True if greedy buy condition met
+            True if greedy buy condition met AND trade would be profitable
         """
         if not self.is_greedy_mode():
             return False
@@ -139,18 +153,24 @@ class GreedyMomentumStrategy(Strategy):
         # Buy if price is profit_margin% above where we sold
         target_price = self.last_sell_price * (1 + self.profit_margin / 100)
         
-        return current_price >= target_price
+        if current_price >= target_price:
+            # CRITICAL: Check if this trade would be profitable after fees
+            return self.would_be_profitable_buy(current_price)
+        
+        return False
     
     def greedy_sell_signal(self, current_price: float) -> bool:
         """
         Greedy sell: If holding BTC and been waiting, sell when price crosses slightly
         above where we last bought (indicating we can make a quick profit).
         
+        Now checks would_be_profitable_sell() to ensure trade beats baseline after fees.
+        
         Args:
             current_price: Current market price
             
         Returns:
-            True if greedy sell condition met
+            True if greedy sell condition met AND trade would be profitable
         """
         if not self.is_greedy_mode():
             return False
@@ -166,11 +186,18 @@ class GreedyMomentumStrategy(Strategy):
         # Sell if price is profit_margin% above where we bought
         target_price = self.last_buy_price * (1 + self.profit_margin / 100)
         
-        return current_price >= target_price
+        if current_price >= target_price:
+            # CRITICAL: Check if this trade would be profitable after fees
+            return self.would_be_profitable_sell(current_price)
+        
+        return False
     
     def buy_signal(self, candles: List) -> bool:
         """
         Generate buy signal from either normal momentum or greedy logic.
+        
+        All signals are checked against would_be_profitable_buy() to ensure
+        the trade will beat our baseline after accounting for fees.
         
         Args:
             candles: Historical candle data
@@ -192,13 +219,13 @@ class GreedyMomentumStrategy(Strategy):
                 self._closes_cache.extend([c[4] for c in candles[len(self._closes_cache):]])
         
         # Check greedy buy first (takes priority when patient)
+        # greedy_buy_signal already checks would_be_profitable_buy internally
         if self.greedy_buy_signal(current_price):
-            if self.check_baseline_for_buy(current_price):
-                # Reset counters on successful signal
-                self.candles_since_last_trade = 0
-                self.impatient_candles = 0
-                self.last_buy_price = current_price
-                return True
+            # Reset counters on successful signal
+            self.candles_since_last_trade = 0
+            self.impatient_candles = 0
+            self.last_buy_price = current_price
+            return True
         
         # Normal momentum buy signal (use cached closes)
         current_roc = self.calculate_roc(self._closes_cache)
@@ -208,7 +235,8 @@ class GreedyMomentumStrategy(Strategy):
         momentum_buy = previous_roc <= self.buy_threshold and current_roc > self.buy_threshold
         
         if momentum_buy:
-            if self.check_baseline_for_buy(current_price):
+            # CRITICAL: Check if this trade would be profitable after fees
+            if self.would_be_profitable_buy(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_buy_price = current_price
@@ -227,6 +255,9 @@ class GreedyMomentumStrategy(Strategy):
     def sell_signal(self, candles: List) -> bool:
         """
         Generate sell signal from either normal momentum or greedy logic.
+        
+        All signals are checked against would_be_profitable_sell() to ensure
+        the trade will beat our baseline after accounting for fees.
         
         Args:
             candles: Historical candle data
@@ -248,13 +279,13 @@ class GreedyMomentumStrategy(Strategy):
                 self._closes_cache.extend([c[4] for c in candles[len(self._closes_cache):]])
         
         # Check greedy sell first (takes priority when patient)
+        # greedy_sell_signal already checks would_be_profitable_sell internally
         if self.greedy_sell_signal(current_price):
-            if self.check_baseline_for_sell(current_price):
-                # Reset counters on successful signal
-                self.candles_since_last_trade = 0
-                self.impatient_candles = 0
-                self.last_sell_price = current_price
-                return True
+            # Reset counters on successful signal
+            self.candles_since_last_trade = 0
+            self.impatient_candles = 0
+            self.last_sell_price = current_price
+            return True
         
         # Normal momentum sell signal (use cached closes)
         current_roc = self.calculate_roc(self._closes_cache)
@@ -264,7 +295,8 @@ class GreedyMomentumStrategy(Strategy):
         momentum_sell = previous_roc >= self.sell_threshold and current_roc < self.sell_threshold
         
         if momentum_sell:
-            if self.check_baseline_for_sell(current_price):
+            # CRITICAL: Check if this trade would be profitable after fees
+            if self.would_be_profitable_sell(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_sell_price = current_price
@@ -294,6 +326,8 @@ class GreedyMomentumStrategy(Strategy):
             f"⚡💰 Greedy Momentum Strategy (ROC {self.period}-period)",
             f"   • Normal: Buy on {self.buy_threshold}% momentum, Sell on {self.sell_threshold}%",
             f"   • Greedy: After {self.patience_candles} unprofitable candles ({self.patience_candles * 5 // 60}h @ 5min), take {self.profit_margin}% profit",
+            f"   • Fee Rate: {self.fee_rate*100:.4f}%",
+            f"   • Loss Tolerance: {self.loss_tolerance*100:.2f}%",
             f"   • Status: {greedy_status} ({candles_left} unprofitable candles until greedy)",
             f"   • Candles since last trade: {self.candles_since_last_trade}",
             f"   • Impatient candles (unprofitable): {self.impatient_candles}"
@@ -310,5 +344,13 @@ class GreedyMomentumStrategy(Strategy):
             if self.is_greedy_mode() and self.bot.position == "short":
                 target = self.last_sell_price * (1 + self.profit_margin / 100)
                 lines.append(f"   • Greedy buy target: ${target:,.2f}")
+        
+        # Show min profitable prices
+        if self.bot.position == "long":
+            min_sell = self.get_min_profitable_sell_price()
+            lines.append(f"   • Min profitable sell: ${min_sell:,.2f}")
+        else:
+            max_buy = self.get_min_profitable_buy_price()
+            lines.append(f"   • Max profitable buy: ${max_buy:,.2f}")
         
         return lines

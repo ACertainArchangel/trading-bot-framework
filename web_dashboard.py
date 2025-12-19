@@ -357,11 +357,25 @@ def get_bot_state():
             # Min buy price to beat asset baseline
             min_buy_price = (bot.currency * (1 - bot.fee_rate)) / bot.asset_baseline if bot.asset_baseline > 0 else None
         
-        # Calculate APY
-        apy_usd = 0.0
+        # Calculate APY metrics
+        # Real APY: actual portfolio value change in USD terms
+        # BTC APY: portfolio value change in BTC terms (positive if you're outperforming BTC)
+        real_apy = 0.0
         apy_btc = 0.0
         elapsed_seconds = 0
         elapsed_str = "0s"
+        
+        # Calculate current portfolio value in USD and BTC
+        if bot.position == 'long':
+            current_portfolio_usd = bot.asset * current_price
+            current_portfolio_btc = bot.asset
+        else:
+            current_portfolio_usd = bot.currency
+            current_portfolio_btc = bot.currency / current_price if current_price > 0 else 0
+        
+        # Get initial values
+        initial_usd = getattr(bot, 'initial_usd_baseline', 0)
+        initial_btc = getattr(bot, 'initial_crypto_baseline', 0)
         
         if hasattr(bot, 'start_time') and bot.start_time:
             now = datetime.now(timezone.utc)
@@ -370,26 +384,26 @@ def get_bot_state():
             
             # Calculate APY with smart handling for different time periods
             if elapsed_seconds >= 60:
-                import math
                 years = elapsed_seconds / (365.25 * 24 * 3600)
                 
-                # USD APY
-                if hasattr(bot, 'initial_usd_baseline') and bot.initial_usd_baseline > 0:
-                    ratio = bot.currency_baseline / bot.initial_usd_baseline
-                    if elapsed_seconds < 86400:  # Less than 1 day
+                # Real APY: (current_usd - initial_usd) / initial_usd, annualized
+                if initial_usd > 0:
+                    ratio = current_portfolio_usd / initial_usd
+                    if elapsed_seconds < 86400:  # Less than 1 day - linear extrapolation
                         return_pct = (ratio - 1) * 100
-                        apy_usd = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                        real_apy = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
                     else:
                         try:
                             if ratio > 0:
-                                apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                                real_apy = ((ratio ** (1 / years)) - 1) * 100
                         except (OverflowError, ValueError):
-                            apy_usd = None
+                            real_apy = None
                 
-                # BTC APY
-                if hasattr(bot, 'initial_crypto_baseline') and bot.initial_crypto_baseline > 0:
-                    ratio = bot.asset_baseline / bot.initial_crypto_baseline
-                    if elapsed_seconds < 86400:  # Less than 1 day
+                # BTC APY: how much has your BTC holdings increased?
+                # Positive = outperforming just holding BTC
+                if initial_btc > 0:
+                    ratio = current_portfolio_btc / initial_btc
+                    if elapsed_seconds < 86400:  # Less than 1 day - linear extrapolation
                         return_pct = (ratio - 1) * 100
                         apy_btc = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
                     else:
@@ -398,9 +412,6 @@ def get_bot_state():
                                 apy_btc = ((ratio ** (1 / years)) - 1) * 100
                         except (OverflowError, ValueError):
                             apy_btc = None
-        
-        # Debug: log what we're sending
-        print(f"[APY DEBUG] initial_usd: {getattr(bot, 'initial_usd_baseline', 0)}, currency_baseline: {bot.currency_baseline}, ratio: {bot.currency_baseline / getattr(bot, 'initial_usd_baseline', 1) if getattr(bot, 'initial_usd_baseline', 0) > 0 else 'N/A'}, apy_usd: {apy_usd}")
         
         return jsonify({
             'position': bot.position,
@@ -415,7 +426,9 @@ def get_bot_state():
             'min_sell_price': min_sell_price,
             'min_buy_price': min_buy_price,
             'current_price': current_price,
-            'apy_usd': apy_usd,
+            'current_portfolio_usd': current_portfolio_usd,
+            'current_portfolio_btc': current_portfolio_btc,
+            'real_apy': real_apy,
             'apy_btc': apy_btc,
             'elapsed_time': elapsed_str,
             'elapsed_seconds': elapsed_seconds
@@ -444,11 +457,25 @@ def emit_bot_state():
             min_acceptable_asset = bot.asset_baseline * (1 - bot.loss_tolerance)
             min_buy_price = (bot.currency * (1 - bot.fee_rate)) / min_acceptable_asset if min_acceptable_asset > 0 else None
         
-        # Calculate projected APY based on current performance
-        apy_usd = 0.0
+        # Calculate APY metrics (Real APY and BTC APY)
+        # Real APY: actual portfolio value change in USD terms
+        # BTC APY: portfolio value change in BTC terms (positive if outperforming BTC)
+        real_apy = 0.0
         apy_btc = 0.0
         elapsed_seconds = 0
         elapsed_str = "0s"
+        
+        # Calculate current portfolio value in USD and BTC
+        if bot.position == 'long':
+            current_portfolio_usd = bot.asset * current_price
+            current_portfolio_btc = bot.asset
+        else:
+            current_portfolio_usd = bot.currency
+            current_portfolio_btc = bot.currency / current_price if current_price > 0 else 0
+        
+        # Get initial values
+        initial_usd = getattr(bot, 'initial_usd_baseline', 0)
+        initial_btc = getattr(bot, 'initial_crypto_baseline', 0)
         
         if hasattr(bot, '_ticker_stream') and bot._ticker_stream and hasattr(bot, 'initial_candle_count'):
             # Calculate elapsed time based on candles processed (market time)
@@ -477,33 +504,29 @@ def emit_bot_state():
             
             # Calculate APY with smart handling for different time periods
             if elapsed_seconds >= 60:
-                import math
                 years = elapsed_seconds / (365.25 * 24 * 3600)
                 
-                # USD APY
-                if hasattr(bot, 'initial_usd_baseline') and bot.initial_usd_baseline > 0:
-                    ratio = bot.currency_baseline / bot.initial_usd_baseline
-                    # For periods < 1 day, use simple linear extrapolation to avoid overflow
-                    if elapsed_seconds < 86400:  # Less than 1 day
+                # Real APY: (current_usd - initial_usd) / initial_usd, annualized
+                if initial_usd > 0:
+                    ratio = current_portfolio_usd / initial_usd
+                    if elapsed_seconds < 86400:  # Less than 1 day - linear extrapolation
                         return_pct = (ratio - 1) * 100
-                        apy_usd = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                        real_apy = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
                     else:
-                        # For longer periods, use proper compound APY
                         try:
                             if ratio > 0:
-                                apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                                real_apy = ((ratio ** (1 / years)) - 1) * 100
                         except (OverflowError, ValueError):
-                            apy_usd = None
+                            real_apy = None
                 
-                # BTC APY
-                if hasattr(bot, 'initial_crypto_baseline') and bot.initial_crypto_baseline > 0:
-                    ratio = bot.asset_baseline / bot.initial_crypto_baseline
-                    # For periods < 1 day, use simple linear extrapolation to avoid overflow
-                    if elapsed_seconds < 86400:  # Less than 1 day
+                # BTC APY: how much has your BTC holdings increased?
+                # Positive = outperforming just holding BTC
+                if initial_btc > 0:
+                    ratio = current_portfolio_btc / initial_btc
+                    if elapsed_seconds < 86400:  # Less than 1 day - linear extrapolation
                         return_pct = (ratio - 1) * 100
                         apy_btc = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
                     else:
-                        # For longer periods, use proper compound APY
                         try:
                             if ratio > 0:
                                 apy_btc = ((ratio ** (1 / years)) - 1) * 100
@@ -523,7 +546,9 @@ def emit_bot_state():
             'min_sell_price': min_sell_price,
             'min_buy_price': min_buy_price,
             'current_price': current_price,
-            'apy_usd': apy_usd,
+            'current_portfolio_usd': current_portfolio_usd,
+            'current_portfolio_btc': current_portfolio_btc,
+            'real_apy': real_apy,
             'apy_btc': apy_btc,
             'elapsed_time': elapsed_str,
             'elapsed_seconds': elapsed_seconds

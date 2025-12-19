@@ -105,8 +105,8 @@ class BollingerStrategy(Strategy):
         buy = previous_price > prev_lower and current_price <= current_lower
         
         if buy:
-            # Check baseline protection before signaling buy
-            if not self.check_baseline_for_buy(current_price):
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_buy(current_price):
                 return False
         
         return buy
@@ -146,8 +146,8 @@ class BollingerStrategy(Strategy):
         sell = previous_price < prev_upper and current_price >= current_upper
         
         if sell:
-            # Check baseline protection before signaling sell
-            if not self.check_baseline_for_sell(current_price):
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_sell(current_price):
                 return False
         
         return sell

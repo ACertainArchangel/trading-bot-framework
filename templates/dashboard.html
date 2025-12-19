@@ -522,12 +522,12 @@
             <h2 style="margin-top: 20px;">📊 Performance (APY)</h2>
             
             <div class="stat-card">
-                <div class="stat-label">APY (USD)</div>
-                <div id="apy-usd" class="stat-value">0.00%</div>
+                <div class="stat-label">Real APY (USD)</div>
+                <div id="real-apy" class="stat-value">0.00%</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-label">APY (BTC)</div>
+                <div class="stat-label">BTC APY</div>
                 <div id="apy-btc" class="stat-value">0.00%</div>
             </div>
 
@@ -1179,21 +1179,21 @@
             }
             
             // Update APY metrics
-            const apyUsdEl = document.getElementById('apy-usd');
+            const realApyEl = document.getElementById('real-apy');
             const apyBtcEl = document.getElementById('apy-btc');
             
-            if (state.apy_usd !== undefined) {
-                apyUsdEl.textContent = `${state.apy_usd.toFixed(2)}%`;
-                if (state.apy_usd > 0) {
-                    apyUsdEl.className = 'stat-value positive';
-                } else if (state.apy_usd < 0) {
-                    apyUsdEl.className = 'stat-value negative';
+            if (state.real_apy !== undefined && state.real_apy !== null) {
+                realApyEl.textContent = `${state.real_apy.toFixed(2)}%`;
+                if (state.real_apy > 0) {
+                    realApyEl.className = 'stat-value positive';
+                } else if (state.real_apy < 0) {
+                    realApyEl.className = 'stat-value negative';
                 } else {
-                    apyUsdEl.className = 'stat-value';
+                    realApyEl.className = 'stat-value';
                 }
             }
             
-            if (state.apy_btc !== undefined) {
+            if (state.apy_btc !== undefined && state.apy_btc !== null) {
                 apyBtcEl.textContent = `${state.apy_btc.toFixed(2)}%`;
                 if (state.apy_btc > 0) {
                     apyBtcEl.className = 'stat-value positive';

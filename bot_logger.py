@@ -1,6 +1,7 @@
 """
 Centralized logging system for trading bots.
 Supports multi-instance logging to both files and web interface.
+Kind of deprecated in favor of just making simple logging functions for each instance and passing but still here for reference and potential use.
 """
 
 import os

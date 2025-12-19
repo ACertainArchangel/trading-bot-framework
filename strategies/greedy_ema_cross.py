@@ -191,7 +191,7 @@ class GreedyEMACrossStrategy(Strategy):
         
         # Check greedy buy first (takes priority when patient)
         if self.greedy_buy_signal(current_price):
-            if self.check_baseline_for_buy(current_price):
+            if self.would_be_profitable_buy(current_price):
                 # Reset counters on successful signal
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
@@ -208,7 +208,7 @@ class GreedyEMACrossStrategy(Strategy):
         ema_buy = prev_fast_ema <= prev_slow_ema and fast_ema > slow_ema
         
         if ema_buy:
-            if self.check_baseline_for_buy(current_price):
+            if self.would_be_profitable_buy(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_buy_price = current_price
@@ -249,7 +249,7 @@ class GreedyEMACrossStrategy(Strategy):
         
         # Check greedy sell first (takes priority when patient)
         if self.greedy_sell_signal(current_price):
-            if self.check_baseline_for_sell(current_price):
+            if self.would_be_profitable_sell(current_price):
                 # Reset counters on successful signal
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
@@ -266,7 +266,7 @@ class GreedyEMACrossStrategy(Strategy):
         ema_sell = prev_fast_ema >= prev_slow_ema and fast_ema < slow_ema
         
         if ema_sell:
-            if self.check_baseline_for_sell(current_price):
+            if self.would_be_profitable_sell(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_sell_price = current_price

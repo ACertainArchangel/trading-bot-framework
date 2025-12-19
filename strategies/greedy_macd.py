@@ -229,7 +229,7 @@ class GreedyMACDStrategy(Strategy):
         
         # Check greedy buy first (takes priority when patient)
         if self.greedy_buy_signal(current_price):
-            if self.check_baseline_for_buy(current_price):
+            if self.would_be_profitable_buy(current_price):
                 # Reset counters on successful signal
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
@@ -251,7 +251,7 @@ class GreedyMACDStrategy(Strategy):
         macd_buy = histogram[-2] <= 0 and histogram[-1] > 0
         
         if macd_buy:
-            if self.check_baseline_for_buy(current_price):
+            if self.would_be_profitable_buy(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_buy_price = current_price
@@ -285,7 +285,7 @@ class GreedyMACDStrategy(Strategy):
         
         # Check greedy sell first (takes priority when patient)
         if self.greedy_sell_signal(current_price):
-            if self.check_baseline_for_sell(current_price):
+            if self.would_be_profitable_sell(current_price):
                 # Reset counters on successful signal
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
@@ -307,7 +307,7 @@ class GreedyMACDStrategy(Strategy):
         macd_sell = histogram[-2] >= 0 and histogram[-1] < 0
         
         if macd_sell:
-            if self.check_baseline_for_sell(current_price):
+            if self.would_be_profitable_sell(current_price):
                 self.candles_since_last_trade = 0
                 self.impatient_candles = 0
                 self.last_sell_price = current_price
@@ -337,9 +337,12 @@ class GreedyMACDStrategy(Strategy):
             f"📊💰 Greedy MACD Strategy ({self.fast_period}/{self.slow_period}/{self.signal_period})",
             f"   • Normal: Buy on bullish crossover, Sell on bearish crossover",
             f"   • Greedy: After {self.patience_candles} unprofitable candles ({self.patience_candles * 5 // 60}h @ 5min), take {self.profit_margin}% profit",
+            f"   • Fee Rate: {self.fee_rate*100:.4f}%",
+            f"   • Loss Tolerance: {self.loss_tolerance*100:.2f}%",
             f"   • Status: {greedy_status} ({candles_left} unprofitable candles until greedy)",
             f"   • Candles since last trade: {self.candles_since_last_trade}",
-            f"   • Impatient candles (unprofitable): {self.impatient_candles}"
+            f"   • Impatient candles (unprofitable): {self.impatient_candles}",
+            f"   • Economics-aware: only signals profitable trades"
         ]
         
         if self.last_buy_price:

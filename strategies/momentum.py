@@ -11,6 +11,10 @@ Trading Logic:
 - Sell when momentum crosses below a negative threshold (strong downward momentum)
 
 This is a trend-following strategy that tries to ride strong moves.
+
+ECONOMICS-AWARE:
+- Strategy now has direct access to fee_rate and loss_tolerance
+- Uses would_be_profitable_buy/sell() to check profitability BEFORE signaling
 """
 
 from typing import List
@@ -23,9 +27,12 @@ class MomentumStrategy(Strategy):
     
     Buy when ROC crosses above buy threshold (strong upward momentum)
     Sell when ROC crosses below sell threshold (strong downward momentum)
+    
+    Now economics-aware: checks profitability including fees before signaling.
     """
     
-    def __init__(self, bot, period: int = 10, buy_threshold: float = 2.0, sell_threshold: float = -2.0):
+    def __init__(self, bot, period: int = 10, buy_threshold: float = 2.0, sell_threshold: float = -2.0,
+                 fee_rate: float = 0.0, loss_tolerance: float = 0.0):
         """
         Initialize Momentum strategy.
         
@@ -34,8 +41,10 @@ class MomentumStrategy(Strategy):
             period: Lookback period for ROC calculation (default 10)
             buy_threshold: ROC % threshold to generate buy signal (default 2.0%)
             sell_threshold: ROC % threshold to generate sell signal (default -2.0%)
+            fee_rate: Trading fee rate as decimal (e.g., 0.0025 for 0.25%)
+            loss_tolerance: Max acceptable loss as decimal (e.g., 0.0 for no losses)
         """
-        super().__init__(bot)
+        super().__init__(bot, fee_rate=fee_rate, loss_tolerance=loss_tolerance)
         self.period = period
         self.buy_threshold = buy_threshold  # Positive value (e.g., 2.0 for 2%)
         self.sell_threshold = sell_threshold  # Negative value (e.g., -2.0 for -2%)
@@ -45,7 +54,7 @@ class MomentumStrategy(Strategy):
         self._closes_cache = []
         
     def __str__(self):
-        return f"Momentum({self.period}, buy={self.buy_threshold}%, sell={self.sell_threshold}%)"
+        return f"Momentum({self.period}, buy={self.buy_threshold}%, sell={self.sell_threshold}%, fee={self.fee_rate*100:.3f}%)"
     
     def calculate_roc(self, prices: List[float]) -> float:
         """
@@ -94,14 +103,12 @@ class MomentumStrategy(Strategy):
         previous_roc = self.calculate_roc(closes[:-1])
         
         # Buy when ROC crosses above buy threshold (momentum turning positive)
-        # Previous: ROC was below or equal to threshold
-        # Current: ROC is above threshold
         buy = previous_roc <= self.buy_threshold and current_roc > self.buy_threshold
         
         if buy:
-            # Check baseline protection before signaling buy
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_buy(current_price):
+            if not self.would_be_profitable_buy(current_price):
                 return False
         
         return buy
@@ -129,14 +136,12 @@ class MomentumStrategy(Strategy):
         previous_roc = self.calculate_roc(closes[:-1])
         
         # Sell when ROC crosses below sell threshold (momentum turning negative)
-        # Previous: ROC was above or equal to threshold
-        # Current: ROC is below threshold
         sell = previous_roc >= self.sell_threshold and current_roc < self.sell_threshold
         
         if sell:
-            # Check baseline protection before signaling sell
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_sell(current_price):
+            if not self.would_be_profitable_sell(current_price):
                 return False
         
         return sell
@@ -154,6 +159,8 @@ class MomentumStrategy(Strategy):
             f"   • ROC = ((Current Price - Old Price) / Old Price) × 100",
             f"   • BUY when ROC crosses above {self.buy_threshold}% (strong upward momentum)",
             f"   • SELL when ROC crosses below {self.sell_threshold}% (strong downward momentum)",
+            f"   • Fee Rate: {self.fee_rate*100:.4f}%",
+            f"   • Loss Tolerance: {self.loss_tolerance*100:.2f}%",
             f"   • Catches explosive price movements early",
-            f"   • Baseline protection ensures we never take a loss"
+            f"   • Economics-aware: only signals profitable trades"
         ]

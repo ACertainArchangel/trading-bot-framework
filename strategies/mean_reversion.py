@@ -109,9 +109,9 @@ class MeanReversionStrategy(Strategy):
         buy = previous_zscore >= self.buy_threshold and current_zscore < self.buy_threshold
         
         if buy:
-            # Check baseline protection before signaling buy
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_buy(current_price):
+            if not self.would_be_profitable_buy(current_price):
                 return False
         
         return buy
@@ -148,9 +148,9 @@ class MeanReversionStrategy(Strategy):
         sell = previous_zscore <= self.sell_threshold and current_zscore > self.sell_threshold
         
         if sell:
-            # Check baseline protection before signaling sell
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_sell(current_price):
+            if not self.would_be_profitable_sell(current_price):
                 return False
         
         return sell

@@ -1,3 +1,14 @@
+"""
+MACD (Moving Average Convergence Divergence) Trading Strategy
+
+MACD is a trend-following momentum indicator that shows the relationship between
+two exponential moving averages (EMAs) of a security's price.
+
+ECONOMICS-AWARE:
+- Strategy now has direct access to fee_rate and loss_tolerance
+- Uses would_be_profitable_buy/sell() to check profitability BEFORE signaling
+"""
+
 from typing import List, Tuple
 from .base import Strategy
 
@@ -9,12 +20,13 @@ class MACDStrategy(Strategy):
     - BUY when MACD line crosses above signal line (bullish crossover)
     - SELL when MACD line crosses below signal line (bearish crossover)
     
-    Also checks baseline to avoid trades that would result in a loss.
+    Now economics-aware: checks profitability including fees before signaling.
     """
     
     def __init__(self, bot, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9,
                  min_slope_periods: int = 3, min_momentum_strength: float = 2.0,
-                 trajectory_threshold: float = 0.7, sharp_reversal_multiplier: float = 3.0):
+                 trajectory_threshold: float = 0.7, sharp_reversal_multiplier: float = 3.0,
+                 fee_rate: float = 0.0, loss_tolerance: float = 0.0):
         """
         Initialize MACD strategy with trajectory-based prediction.
         
@@ -27,8 +39,10 @@ class MACDStrategy(Strategy):
             min_momentum_strength: Minimum histogram acceleration required (default 2.0)
             trajectory_threshold: How close to zero to predict crossover (default 0.7 = 70% of way to zero)
             sharp_reversal_multiplier: Multiplier for detecting sharp reversals (default 3.0)
+            fee_rate: Trading fee rate as decimal (e.g., 0.0025 for 0.25%)
+            loss_tolerance: Max acceptable loss as decimal (e.g., 0.0 for no losses)
         """
-        super().__init__(bot)
+        super().__init__(bot, fee_rate=fee_rate, loss_tolerance=loss_tolerance)
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.signal_period = signal_period
@@ -46,7 +60,7 @@ class MACDStrategy(Strategy):
     def __str__(self):
         return (f"MACDStrategy(fast={self.fast_period}, slow={self.slow_period}, signal={self.signal_period}, "
                 f"trajectory={self.trajectory_threshold}, sharp_reversal={self.sharp_reversal_multiplier}x, "
-                f"momentum={self.min_momentum_strength}x)")
+                f"momentum={self.min_momentum_strength}x, fee={self.fee_rate*100:.3f}%)")
     
     def calculate_ema(self, prices: List[float], period: int) -> List[float]:
         """
@@ -272,16 +286,16 @@ class MACDStrategy(Strategy):
         if not crossover:
             return False
         
-        # Check if trade would be profitable (exceed baseline)
+        # CRITICAL: Check if trade would be profitable after fees
         current_price = candles[-1][4]  # Latest close price
-        baseline_check = self.check_baseline_for_buy(current_price)
+        profitable = self.would_be_profitable_buy(current_price)
         
-        if baseline_check:
+        if profitable:
             print(f"✅ [{candle_time}] 📈 MACD BUY SIGNAL: Crossover! Hist: {histogram[-2]:.6f} → {histogram[-1]:.6f}, Price: ${current_price:.2f}")
         else:
-            print(f"⚠️ [{candle_time}] MACD BUY crossover but baseline blocks: Would get {(self.bot.currency * (1 - self.bot.fee_rate)) / current_price:.8f}, need > {self.bot.asset_baseline:.8f}")
+            print(f"⚠️ [{candle_time}] MACD BUY crossover but not profitable: Would get {(self.bot.currency * (1 - self.fee_rate)) / current_price:.8f}, need > {self.asset_baseline:.8f}")
         
-        return baseline_check
+        return profitable
     
     def sell_signal(self, candles: List[Tuple]) -> bool:
         """
@@ -318,13 +332,32 @@ class MACDStrategy(Strategy):
         if not crossover:
             return False
         
-        # Check if trade would be profitable (exceed baseline)
+        # CRITICAL: Check if trade would be profitable after fees
         current_price = candles[-1][4]  # Latest close price
-        baseline_check = self.check_baseline_for_sell(current_price)
+        profitable = self.would_be_profitable_sell(current_price)
         
-        if baseline_check:
+        if profitable:
             print(f"✅ [{candle_time}] 📉 MACD SELL SIGNAL: Crossover! Hist: {histogram[-2]:.6f} → {histogram[-1]:.6f}, Price: ${current_price:.2f}")
         else:
-            print(f"⚠️ [{candle_time}] MACD SELL crossover but baseline blocks: Would get {(self.bot.asset * current_price) * (1 - self.bot.fee_rate):.2f}, need > {self.bot.currency_baseline:.2f}")
+            print(f"⚠️ [{candle_time}] MACD SELL crossover but not profitable: Would get {(self.bot.asset * current_price) * (1 - self.fee_rate):.2f}, need > {self.currency_baseline:.2f}")
         
-        return baseline_check
+        return profitable
+    
+    @property
+    def name(self):
+        """Return strategy name."""
+        return f"MACD ({self.fast_period}/{self.slow_period}/{self.signal_period})"
+    
+    def explain(self) -> List[str]:
+        """Provide explanation of the strategy."""
+        return [
+            f"📈 MACD Strategy ({self.fast_period}/{self.slow_period}/{self.signal_period})",
+            f"   • MACD Line = EMA({self.fast_period}) - EMA({self.slow_period})",
+            f"   • Signal Line = EMA({self.signal_period}) of MACD Line",
+            f"   • Histogram = MACD Line - Signal Line",
+            f"   • BUY when histogram crosses from negative to positive",
+            f"   • SELL when histogram crosses from positive to negative",
+            f"   • Fee Rate: {self.fee_rate*100:.4f}%",
+            f"   • Loss Tolerance: {self.loss_tolerance*100:.2f}%",
+            f"   • Economics-aware: only signals profitable trades"
+        ]

@@ -55,8 +55,8 @@ def main():
     required_fields = [
         'initial_usd_baseline', 'initial_crypto_baseline',
         'final_usd_baseline', 'final_crypto_baseline',
-        'apy_usd', 'apy_btc',
-        'baseline_return_usd_pct', 'baseline_return_btc_pct',
+        'real_apy', 'apy_btc',
+        'value_return_pct', 'btc_return_pct',
         'longest_idle_time', 'max_idle_candles', 'max_idle_minutes'
     ]
     
@@ -68,16 +68,14 @@ def main():
     print("📈 BASELINE TRACKING:")
     print(f"   Initial USD Baseline:  ${result['initial_usd_baseline']:.2f}")
     print(f"   Final USD Baseline:    ${result['final_usd_baseline']:.2f}")
-    print(f"   USD Return:            {result['baseline_return_usd_pct']:.2f}%")
     print()
     print(f"   Initial BTC Baseline:  {result['initial_crypto_baseline']:.8f} BTC")
     print(f"   Final BTC Baseline:    {result['final_crypto_baseline']:.8f} BTC")
-    print(f"   BTC Return:            {result['baseline_return_btc_pct']:.2f}%")
     print()
     
     print("💰 APY CALCULATIONS:")
-    print(f"   APY (USD):             {result['apy_usd']:.2f}%")
-    print(f"   APY (BTC):             {result['apy_btc']:.2f}%")
+    print(f"   Real APY (USD):        {result['real_apy']:.2f}%")
+    print(f"   BTC APY:               {result['apy_btc']:.2f}%")
     print()
     
     print("⏰ IDLE TIME TRACKING:")
@@ -90,8 +88,9 @@ def main():
     print(f"   Total Trades:          {result['trades']}")
     print(f"   Win Rate:              {result['win_rate']:.1f}%")
     print(f"   Avg Profit/Trade:      ${result['avg_profit_per_trade']:.2f}")
-    print(f"   Current Value:         ${result['current_value']:.2f}")
+    print(f"   Current Value (USD):   ${result['current_portfolio_usd']:.2f}")
     print(f"   Value Return:          {result['value_return_pct']:.2f}%")
+    print(f"   BTC Return:            {result['btc_return_pct']:.2f}%")
     print(f"   Final Position:        {result['final_position'].upper()}")
     print()
     

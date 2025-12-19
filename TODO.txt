@@ -1,6 +1,1 @@
-Bots should take loggers
-Strategies should handle loss tolerance internally and not inforce it externally.
-Strategies should take fee information internally and not rely on the bot to do so!
-There should be a real_apy metric.
-
 Launch the best strat.

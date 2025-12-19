@@ -98,9 +98,9 @@ class EMACrossStrategy(Strategy):
         buy = prev_fast_ema <= prev_slow_ema and fast_ema > slow_ema
         
         if buy:
-            # Check baseline protection before signaling buy
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_buy(current_price):
+            if not self.would_be_profitable_buy(current_price):
                 return False
         
         return buy
@@ -135,9 +135,9 @@ class EMACrossStrategy(Strategy):
         sell = prev_fast_ema >= prev_slow_ema and fast_ema < slow_ema
         
         if sell:
-            # Check baseline protection before signaling sell
+            # CRITICAL: Check if trade would be profitable after fees
             current_price = candles[-1][4]
-            if not self.check_baseline_for_sell(current_price):
+            if not self.would_be_profitable_sell(current_price):
                 return False
         
         return sell

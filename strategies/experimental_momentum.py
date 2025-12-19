@@ -9,6 +9,10 @@ Combines Grumpy Mom's greedy mechanism with a trend filter:
 
 The idea: Don't catch falling knives (greedy buy in downtrend)
          Don't sell rallies early (greedy sell in uptrend)
+
+ECONOMICS-AWARE:
+- Strategy now has direct access to fee_rate and loss_tolerance
+- Uses would_be_profitable_buy/sell() to check profitability BEFORE signaling
 """
 
 from typing import List
@@ -18,12 +22,15 @@ from .base import Strategy
 class ExperimentalMomentumStrategy(Strategy):
     """
     Greedy Trend Mom - Grumpy Mom with trend-filtered greedy trades.
+    
+    Now economics-aware: checks profitability including fees before signaling.
     """
     
     def __init__(self, bot, period: int = 14, buy_threshold: float = 1.0, 
                  sell_threshold: float = -1.0, profit_margin: float = 1.0,
-                 loss_tolerance: float = 0.0, patience_candles: int = 1440,
-                 trend_period: int = 200, require_trend_alignment: bool = True):
+                 patience_candles: int = 1440, trend_period: int = 200,
+                 require_trend_alignment: bool = True,
+                 fee_rate: float = 0.0, loss_tolerance: float = 0.0):
         """
         Initialize Greedy Trend Mom strategy.
         
@@ -33,12 +40,13 @@ class ExperimentalMomentumStrategy(Strategy):
             buy_threshold: ROC % for momentum buy (default 1.0%)
             sell_threshold: ROC % for momentum sell (default -1.0%)
             profit_margin: % profit for greedy trades (default 1.0%)
-            loss_tolerance: Not used, kept for compatibility
             patience_candles: Candles before greedy mode (default 1440)
             trend_period: SMA period for trend (default 200)
             require_trend_alignment: Filter greedy by trend (default True)
+            fee_rate: Trading fee rate as decimal (e.g., 0.0025 for 0.25%)
+            loss_tolerance: Max acceptable loss as decimal (e.g., 0.0 for no losses)
         """
-        super().__init__(bot)
+        super().__init__(bot, fee_rate=fee_rate, loss_tolerance=loss_tolerance)
         self.period = period
         self.buy_threshold = buy_threshold
         self.sell_threshold = sell_threshold
@@ -63,7 +71,7 @@ class ExperimentalMomentumStrategy(Strategy):
         
     def __str__(self):
         return (f"GreedyTrendMom(margin={self.profit_margin}%, "
-                f"sma={self.trend_period}, patience={self.patience_candles})")
+                f"sma={self.trend_period}, patience={self.patience_candles}, fee={self.fee_rate*100:.3f}%)")
     
     @property
     def name(self):
@@ -151,6 +159,11 @@ class ExperimentalMomentumStrategy(Strategy):
         
         # Greedy buy (trend-filtered)
         if self.greedy_buy_signal(current_price):
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_buy(current_price):
+                self.candles_since_last_trade += 1
+                self.impatient_candles += 1
+                return False
             self.candles_since_last_trade = 0
             self.impatient_candles = 0
             self.last_buy_price = current_price
@@ -161,6 +174,11 @@ class ExperimentalMomentumStrategy(Strategy):
         previous_roc = self.calculate_roc(self._closes_cache[:-1])
         
         if previous_roc <= self.buy_threshold and current_roc > self.buy_threshold:
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_buy(current_price):
+                self.candles_since_last_trade += 1
+                self.impatient_candles += 1
+                return False
             self.candles_since_last_trade = 0
             self.impatient_candles = 0
             self.last_buy_price = current_price
@@ -192,6 +210,11 @@ class ExperimentalMomentumStrategy(Strategy):
         
         # Greedy sell (trend-filtered)
         if self.greedy_sell_signal(current_price):
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_sell(current_price):
+                self.candles_since_last_trade += 1
+                self.impatient_candles += 1
+                return False
             self.candles_since_last_trade = 0
             self.impatient_candles = 0
             self.last_sell_price = current_price
@@ -202,6 +225,11 @@ class ExperimentalMomentumStrategy(Strategy):
         previous_roc = self.calculate_roc(self._closes_cache[:-1])
         
         if previous_roc >= self.sell_threshold and current_roc < self.sell_threshold:
+            # CRITICAL: Check if trade would be profitable after fees
+            if not self.would_be_profitable_sell(current_price):
+                self.candles_since_last_trade += 1
+                self.impatient_candles += 1
+                return False
             self.candles_since_last_trade = 0
             self.impatient_candles = 0
             self.last_sell_price = current_price
@@ -221,6 +249,9 @@ class ExperimentalMomentumStrategy(Strategy):
         return [
             f"⚡🎯 Greedy Trend Mom",
             f"   • Margin: {self.profit_margin}%, SMA: {self.trend_period}",
+            f"   • Fee Rate: {self.fee_rate*100:.4f}%",
+            f"   • Loss Tolerance: {self.loss_tolerance*100:.2f}%",
             f"   • {greedy} | {trend} (SMA: ${self.current_sma:,.0f})",
-            f"   • Greedy buy: {'✅' if self.greedy_buy_allowed() else '❌'} | sell: {'✅' if self.greedy_sell_allowed() else '❌'}"
+            f"   • Greedy buy: {'✅' if self.greedy_buy_allowed() else '❌'} | sell: {'✅' if self.greedy_sell_allowed() else '❌'}",
+            f"   • Economics-aware: only signals profitable trades"
         ]

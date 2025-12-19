@@ -178,37 +178,44 @@ def run_single_backtest_with_progress(args: Tuple) -> Dict[str, Any]:
         
         # Calculate final metrics
         current_price = candles[-1][4]
+        
+        # Calculate current portfolio value based on position
         if bot.position == "short":
-            final_value = bot.currency
+            current_portfolio_usd = bot.currency
+            current_portfolio_btc = bot.currency / current_price if current_price > 0 else 0
         else:
-            final_value = bot.asset * current_price
+            current_portfolio_usd = bot.asset * current_price
+            current_portfolio_btc = bot.asset
         
         final_usd_baseline = bot.currency_baseline
         final_crypto_baseline = bot.asset_baseline
         
-        # Calculate APY
-        import math
+        # Calculate APY metrics:
+        # - Real APY: actual portfolio value change in USD terms
+        # - BTC APY: portfolio value change in BTC terms (positive = outperforming BTC)
         years = months / 12
         total_seconds = years * 365.25 * 24 * 3600
         
-        apy_usd = 0.0
+        real_apy = 0.0
         apy_btc = 0.0
         
+        # Real APY: (current_portfolio_usd / initial_usd) - 1, annualized
         if initial_usd_baseline > 0 and years > 0:
             try:
-                ratio = final_usd_baseline / initial_usd_baseline
+                ratio = current_portfolio_usd / initial_usd_baseline
                 if total_seconds < 86400:
                     return_pct = (ratio - 1) * 100
-                    apy_usd = return_pct * (365.25 * 24 * 3600 / total_seconds)
+                    real_apy = return_pct * (365.25 * 24 * 3600 / total_seconds)
                 else:
                     if ratio > 0:
-                        apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                        real_apy = ((ratio ** (1 / years)) - 1) * 100
             except (OverflowError, ValueError):
-                apy_usd = 0.0
+                real_apy = 0.0
         
+        # BTC APY: how much has your BTC holdings increased?
         if initial_crypto_baseline > 0 and years > 0:
             try:
-                ratio = final_crypto_baseline / initial_crypto_baseline
+                ratio = current_portfolio_btc / initial_crypto_baseline
                 if total_seconds < 86400:
                     return_pct = (ratio - 1) * 100
                     apy_btc = return_pct * (365.25 * 24 * 3600 / total_seconds)
@@ -229,8 +236,9 @@ def run_single_backtest_with_progress(args: Tuple) -> Dict[str, Any]:
             'granularity': granularity,
             'months': months,
             'starting_currency': starting_currency,
-            'final_value': final_value,
-            'apy_usd': apy_usd,
+            'current_portfolio_usd': current_portfolio_usd,
+            'current_portfolio_btc': current_portfolio_btc,
+            'real_apy': real_apy,
             'apy_btc': apy_btc,
             'trades': trades,
             'wins': wins,
@@ -397,10 +405,10 @@ def main():
         for result in strategy_results:
             if result.get('success'):
                 period = result['period_name']
-                apy = result['apy_usd']
+                apy = result['real_apy']
                 trades = result['trades']
                 win_rate = result['win_rate']
-                final = result['final_value']
+                final = result['current_portfolio_usd']
                 candles = result['candles_processed']
                 
                 print(f"   📅 {period:15} | APY: {apy:7.1f}% | Trades: {trades:3d} | Win: {win_rate:5.1f}% | Final: ${final:8.2f} | {candles:,} candles")
@@ -410,16 +418,16 @@ def main():
         print()
     
     # Best performers
-    successful = [r for r in results if r.get('success') and r.get('apy_usd') is not None]
+    successful = [r for r in results if r.get('success') and r.get('real_apy') is not None]
     if successful:
-        best_apy = max(successful, key=lambda x: x['apy_usd'])
+        best_apy = max(successful, key=lambda x: x['real_apy'])
         best_trades = max(successful, key=lambda x: x['trades'])
         best_win = max(successful, key=lambda x: x['win_rate'])
         
         print("=" * 80)
         print("🥇 BEST PERFORMERS")
         print("=" * 80)
-        print(f"   Highest APY:    {best_apy['strategy_name']} ({best_apy['period_name']}) → {best_apy['apy_usd']:.1f}%")
+        print(f"   Highest APY:    {best_apy['strategy_name']} ({best_apy['period_name']}) → {best_apy['real_apy']:.1f}%")
         print(f"   Most Trades:    {best_trades['strategy_name']} ({best_trades['period_name']}) → {best_trades['trades']} trades")
         print(f"   Best Win Rate:  {best_win['strategy_name']} ({best_win['period_name']}) → {best_win['win_rate']:.1f}%")
         print()
