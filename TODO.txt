@@ -1,1 +1,5 @@
-Launch the best strat.
+Launch the best strat (dwarf)
+
+Make it possible to do a market maker strat where we constantly place buy and sell orders at a spread.
+Do ZCash becausse the spread is bigger than the fee we have to pay and it's still liquid and high
+volume to not be crazy speculative.
