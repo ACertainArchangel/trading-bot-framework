@@ -1,0 +1,140 @@
+[
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "Past 3 Months",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "3-6 Months Ago",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "Past 6 Months",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "Past 3 Months",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "3-6 Months Ago",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "Past 6 Months",
+    "error": "GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/compare_mom_strategies.py\", line 101, in run_single_backtest\n    bot = Bot(\n        interface=interface,\n    ...<4 lines>...\n        initial_price=initial_price\n    )\n  File \"/Users/gabrieljordaan/Desktop/Coding/Artificial Inteligence/Algorithmic Trading/trader_bot.py\", line 125, in __init__\n    self.strategy = self.strategy(self, **self.strategy_params)\n                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: GreedyMomentumStrategy.__init__() got an unexpected keyword argument 'loss_tolerance'\n",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "Past 3 Months",
+    "apy": -68.28607450677484,
+    "profit_pct": -24.600441943333234,
+    "trades": 3,
+    "wins": 1,
+    "losses": 0,
+    "win_rate": 33.33333333333333,
+    "final_value": 7539.9558056666765,
+    "candles": 129233,
+    "days": 89.74513888888889,
+    "success": true
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "3-6 Months Ago",
+    "apy": 116.84923378123702,
+    "profit_pct": 21.028666247181445,
+    "trades": 14,
+    "wins": 7,
+    "losses": 0,
+    "win_rate": 50.0,
+    "final_value": 12102.866624718145,
+    "candles": 129600,
+    "days": 90.0,
+    "success": true
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "Past 6 Months",
+    "apy": -10.401743339898783,
+    "profit_pct": -5.26514342821416,
+    "trades": 17,
+    "wins": 8,
+    "losses": 0,
+    "win_rate": 47.05882352941176,
+    "final_value": 9473.485657178584,
+    "candles": 258833,
+    "days": 179.7451388888889,
+    "success": true
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "Past 3 Months",
+    "apy": -65.7343959179834,
+    "profit_pct": -23.15470373860453,
+    "trades": 3,
+    "wins": 1,
+    "losses": 0,
+    "win_rate": 33.33333333333333,
+    "final_value": 7684.529626139547,
+    "candles": 25850,
+    "days": 89.75694444444444,
+    "success": true
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "3-6 Months Ago",
+    "apy": 14.531556698051507,
+    "profit_pct": 3.4021317710753647,
+    "trades": 2,
+    "wins": 1,
+    "losses": 0,
+    "win_rate": 50.0,
+    "final_value": 10340.213177107536,
+    "candles": 25920,
+    "days": 90.0,
+    "success": true
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "Past 6 Months",
+    "apy": -23.0478009390354,
+    "profit_pct": -12.10471238119977,
+    "trades": 7,
+    "wins": 3,
+    "losses": 0,
+    "win_rate": 42.857142857142854,
+    "final_value": 8789.528761880023,
+    "candles": 51770,
+    "days": 179.75694444444446,
+    "success": true
+  }
+]

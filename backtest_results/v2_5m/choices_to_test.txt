@@ -1,0 +1,19 @@
+#Winning combos with cool edgy names (patience is in number of 5-min candles) Backtest on 1m granularity too.
+
+GreedyMACD(5/13/5, patience=144, margin=1.25%)   @ 0.10% loss  #Spicy mac (champ at market shifts)
+[242/285] GreedyMACD(5/13/5, patience=144, margin=1.25%) @ 0.10% loss → APY_USD: 4.6%, Trades: 31, Rejected: 0B/0S
+python3 test_bot.py greedy_macd --fast_period 5 --slow_period 13 --signal_period 5 --patience_candles 720 --profit_margin 1.25 --loss_tolerance 0.0010 --granularity 1m --age 1 --days 90
+python3 test_bot.py greedy_macd --fast_period 5 --slow_period 13 --signal_period 5 --patience_candles 144 --profit_margin 1.25 --loss_tolerance 0.0010 --granularity 5m --age 1 --days 90
+APY_USD approximate calculated from manual testing by hand as verification: 1.2
+
+GreedyMom(p=14, patience=288, margin=1.0%)  @ 0.00% loss #Grumpy mom (champ in bear markets)
+[91/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
+python3 test_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 1m --age 1 --sell_threshold -1.0 --buy_threshold 1.0 --days 90
+python3 test_bot.py greedy_momentum --period 14 --patience_candles 288 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 5m --age 1 --sell_threshold -1.0 --buy_threshold 1.0 --days 90
+APY_USD approximate calculated from manual testing by hand as verification: 33.472
+
+GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.00% loss #Sleepy mac (risk free alternative to spicy mac that still is exciting and high volume)
+[271/285] GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.00% loss → APY_USD: 2.7%, Trades: 9, Rejected: 0B/0S
+python3 test_bot.py greedy_macd --fast_period 5 --slow_period 13 --signal_period 5 --patience_candles 2880 --profit_margin 0.75 --loss_tolerance 0.00 --granularity 1m --age 1 --days 90
+python3 test_bot.py greedy_macd --fast_period 5 --slow_period 13 --signal_period 5 --patience_candles 576 --profit_margin 0.75 --loss_tolerance 0.00 --granularity 5m --age 1 --days 90
+APY_USD approximate calculated from manual testing by hand as verification: 1.52

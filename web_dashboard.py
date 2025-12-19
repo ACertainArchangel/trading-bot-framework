@@ -154,7 +154,8 @@ def get_indicators():
             'times': times,
             'values': ema,
             'name': f'EMA({period})',
-            'type': 'line'
+            'type': 'line',
+            'visible': period not in [50, 200]  # Hide EMA 50 and 200 by default
         }
     
     # SMAs
@@ -164,7 +165,8 @@ def get_indicators():
             'times': times,
             'values': sma,
             'name': f'SMA({period})',
-            'type': 'line'
+            'type': 'line',
+            'visible': True  # Show all SMAs by default
         }
     
     # Bollinger Bands
@@ -173,19 +175,22 @@ def get_indicators():
         'times': times,
         'values': bb['upper'],
         'name': 'BB Upper',
-        'type': 'line'
+        'type': 'line',
+        'visible': True
     }
     indicators['bb_middle'] = {
         'times': times,
         'values': bb['middle'],
         'name': 'BB Middle',
-        'type': 'line'
+        'type': 'line',
+        'visible': True
     }
     indicators['bb_lower'] = {
         'times': times,
         'values': bb['lower'],
         'name': 'BB Lower',
-        'type': 'line'
+        'type': 'line',
+        'visible': True
     }
     
     # RSI
@@ -195,7 +200,8 @@ def get_indicators():
         'values': rsi,
         'name': 'RSI(14)',
         'type': 'oscillator',
-        'subplot': True
+        'subplot': True,
+        'visible': True
     }
     
     # Stochastic
@@ -205,14 +211,16 @@ def get_indicators():
         'values': stoch['k'],
         'name': 'Stoch %K',
         'type': 'oscillator',
-        'subplot': True
+        'subplot': True,
+        'visible': True
     }
     indicators['stoch_d'] = {
         'times': times,
         'values': stoch['d'],
         'name': 'Stoch %D',
         'type': 'oscillator',
-        'subplot': True
+        'subplot': True,
+        'visible': True
     }
     
     return jsonify(indicators)
@@ -349,16 +357,68 @@ def get_bot_state():
             # Min buy price to beat asset baseline
             min_buy_price = (bot.currency * (1 - bot.fee_rate)) / bot.asset_baseline if bot.asset_baseline > 0 else None
         
+        # Calculate APY
+        apy_usd = 0.0
+        apy_btc = 0.0
+        elapsed_seconds = 0
+        elapsed_str = "0s"
+        
+        if hasattr(bot, 'start_time') and bot.start_time:
+            now = datetime.now(timezone.utc)
+            elapsed = now - bot.start_time
+            elapsed_seconds = elapsed.total_seconds()
+            
+            # Calculate APY with smart handling for different time periods
+            if elapsed_seconds >= 60:
+                import math
+                years = elapsed_seconds / (365.25 * 24 * 3600)
+                
+                # USD APY
+                if hasattr(bot, 'initial_usd_baseline') and bot.initial_usd_baseline > 0:
+                    ratio = bot.currency_baseline / bot.initial_usd_baseline
+                    if elapsed_seconds < 86400:  # Less than 1 day
+                        return_pct = (ratio - 1) * 100
+                        apy_usd = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                    else:
+                        try:
+                            if ratio > 0:
+                                apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                        except (OverflowError, ValueError):
+                            apy_usd = None
+                
+                # BTC APY
+                if hasattr(bot, 'initial_crypto_baseline') and bot.initial_crypto_baseline > 0:
+                    ratio = bot.asset_baseline / bot.initial_crypto_baseline
+                    if elapsed_seconds < 86400:  # Less than 1 day
+                        return_pct = (ratio - 1) * 100
+                        apy_btc = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                    else:
+                        try:
+                            if ratio > 0:
+                                apy_btc = ((ratio ** (1 / years)) - 1) * 100
+                        except (OverflowError, ValueError):
+                            apy_btc = None
+        
+        # Debug: log what we're sending
+        print(f"[APY DEBUG] initial_usd: {getattr(bot, 'initial_usd_baseline', 0)}, currency_baseline: {bot.currency_baseline}, ratio: {bot.currency_baseline / getattr(bot, 'initial_usd_baseline', 1) if getattr(bot, 'initial_usd_baseline', 0) > 0 else 'N/A'}, apy_usd: {apy_usd}")
+        
         return jsonify({
             'position': bot.position,
             'currency': bot.currency,
             'asset': bot.asset,
             'currency_baseline': bot.currency_baseline,
             'asset_baseline': bot.asset_baseline,
+            'initial_usd_baseline': getattr(bot, 'initial_usd_baseline', 0),
+            'initial_crypto_baseline': getattr(bot, 'initial_crypto_baseline', 0),
             'fee_rate': bot.fee_rate,
+            'loss_tolerance': bot.loss_tolerance,
             'min_sell_price': min_sell_price,
             'min_buy_price': min_buy_price,
-            'current_price': current_price
+            'current_price': current_price,
+            'apy_usd': apy_usd,
+            'apy_btc': apy_btc,
+            'elapsed_time': elapsed_str,
+            'elapsed_seconds': elapsed_seconds
         })
     return jsonify({'error': 'No bot configured'}), 404
 
@@ -390,47 +450,65 @@ def emit_bot_state():
         elapsed_seconds = 0
         elapsed_str = "0s"
         
-        if hasattr(bot, 'start_time') and bot.start_time:
-            now = datetime.now(timezone.utc)
-            elapsed = now - bot.start_time
-            elapsed_seconds = elapsed.total_seconds()
+        if hasattr(bot, '_ticker_stream') and bot._ticker_stream and hasattr(bot, 'initial_candle_count'):
+            # Calculate elapsed time based on candles processed (market time)
+            current_candle_count = len(bot._ticker_stream.get_candles())
+            candles_processed = current_candle_count - bot.initial_candle_count
+            
+            # Convert granularity to minutes
+            granularity = bot._ticker_stream.granularity
+            granularity_minutes = {'1m': 1, '5m': 5, '15m': 15, '1h': 60, '6h': 360, '1d': 1440}.get(granularity, 5)
+            
+            # Calculate elapsed time in minutes based on candles
+            elapsed_minutes = candles_processed * granularity_minutes
+            elapsed_seconds = elapsed_minutes * 60
             
             # Format elapsed time
-            days = elapsed.days
-            hours = elapsed.seconds // 3600
-            minutes = (elapsed.seconds % 3600) // 60
+            total_minutes = int(elapsed_minutes)
+            days = total_minutes // 1440
+            hours = (total_minutes % 1440) // 60
+            mins = total_minutes % 60
             if days > 0:
-                elapsed_str = f"{days}d {hours}h {minutes}m"
+                elapsed_str = f"{days}d {hours}h {mins}m"
             elif hours > 0:
-                elapsed_str = f"{hours}h {minutes}m"
+                elapsed_str = f"{hours}h {mins}m"
             else:
-                elapsed_str = f"{minutes}m"
+                elapsed_str = f"{mins}m"
             
-            # Calculate APY if enough time has passed (at least 1 minute)
+            # Calculate APY with smart handling for different time periods
             if elapsed_seconds >= 60:
+                import math
                 years = elapsed_seconds / (365.25 * 24 * 3600)
                 
-                # USD APY - use safe power calculation to avoid overflow
+                # USD APY
                 if hasattr(bot, 'initial_usd_baseline') and bot.initial_usd_baseline > 0:
-                    try:
-                        ratio = bot.currency_baseline / bot.initial_usd_baseline
-                        if ratio > 0:
-                            # Use logarithms to avoid overflow: ratio^(1/years) = e^(ln(ratio)/years)
-                            import math
-                            apy_usd = (math.exp(math.log(ratio) / years) - 1) * 100
-                    except (OverflowError, ValueError):
-                        apy_usd = None  # Too extreme to calculate
+                    ratio = bot.currency_baseline / bot.initial_usd_baseline
+                    # For periods < 1 day, use simple linear extrapolation to avoid overflow
+                    if elapsed_seconds < 86400:  # Less than 1 day
+                        return_pct = (ratio - 1) * 100
+                        apy_usd = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                    else:
+                        # For longer periods, use proper compound APY
+                        try:
+                            if ratio > 0:
+                                apy_usd = ((ratio ** (1 / years)) - 1) * 100
+                        except (OverflowError, ValueError):
+                            apy_usd = None
                 
-                # BTC APY - use safe power calculation to avoid overflow
+                # BTC APY
                 if hasattr(bot, 'initial_crypto_baseline') and bot.initial_crypto_baseline > 0:
-                    try:
-                        ratio = bot.asset_baseline / bot.initial_crypto_baseline
-                        if ratio > 0:
-                            # Use logarithms to avoid overflow: ratio^(1/years) = e^(ln(ratio)/years)
-                            import math
-                            apy_btc = (math.exp(math.log(ratio) / years) - 1) * 100
-                    except (OverflowError, ValueError):
-                        apy_btc = None  # Too extreme to calculate
+                    ratio = bot.asset_baseline / bot.initial_crypto_baseline
+                    # For periods < 1 day, use simple linear extrapolation to avoid overflow
+                    if elapsed_seconds < 86400:  # Less than 1 day
+                        return_pct = (ratio - 1) * 100
+                        apy_btc = return_pct * (365.25 * 24 * 3600 / elapsed_seconds)
+                    else:
+                        # For longer periods, use proper compound APY
+                        try:
+                            if ratio > 0:
+                                apy_btc = ((ratio ** (1 / years)) - 1) * 100
+                        except (OverflowError, ValueError):
+                            apy_btc = None
         
         state = {
             'position': bot.position,
@@ -515,37 +593,11 @@ def handle_disconnect():
 
 @socketio.on('change_granularity')
 def handle_granularity_change(data):
-    """Handle granularity change request."""
-    global ticker_stream
-    
+    """Handle granularity change request - disabled to prevent breaking bot connections."""
     granularity = data.get('granularity', '1m')
-    main_logger(f"⚙️ Changing granularity to {granularity}")
-    
-    # Stop current stream
-    if ticker_stream:
-        ticker_stream.stop()
-    
-    # Reinitialize stream with new granularity
-    initialize_stream(
-        stream_type=config['stream_type'],
-        product_id=config['product_id'],
-        granularity=granularity
-    )
-    
-    # Send new data to client
-    candles = ticker_stream.get_candles()
-    formatted = [
-        {
-            "time": c[0] * 1000,
-            "open": c[3],
-            "high": c[2],
-            "low": c[1],
-            "close": c[4],
-            "volume": c[5]
-        }
-        for c in candles
-    ]
-    emit('initial_data', formatted, broadcast=True)
+    main_logger(f"⚠️ Granularity change to {granularity} blocked - would break bot connection")
+    main_logger(f"💡 To change granularity, restart the bot with --granularity {granularity}")
+    emit('error', {'message': f'Granularity change disabled. Restart bot with --granularity {granularity}'})
 
 
 def initialize_stream(stream_type='live', product_id='BTC-USD', granularity='1m', **kwargs):

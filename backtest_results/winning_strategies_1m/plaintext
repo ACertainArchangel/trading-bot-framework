@@ -1,0 +1,31 @@
+================================================================================                    
+📊 SUMMARY REPORT
+================================================================================                    
+
+🏆 Spicy Macress:  78%|████████████████████████████████████████████▎            | 7/9 [2:05:50<42:01, 1260.52s/it]
+   GreedyMACD(5/13/5, patience=720, margin=1.25%) @ 0.10% loss
+
+   📅 Past 3 Months   | APY:   -33.2% | Trades: 593 | Win:  18.2% | Final: $  678.23 | 129,234 candles
+   📅 3-6 Months Ago  | APY:     1.0% | Trades:  62 | Win:  45.2% | Final: $ 1002.53 | 129,599 candles
+   📅 Past 6 Months   | APY:     4.5% | Trades: 237 | Win:  39.0% | Final: $  832.68 | 258,833 candles
+
+🏆 Grumpy Mom
+   GreedyMomentum(p=14, patience=1440, margin=1.0%) @ 0.00% loss
+
+   📅 Past 3 Months   | APY:    88.6% | Trades:  13 | Win: 100.0% | Final: $  899.42 | 129,234 candles
+   📅 3-6 Months Ago  | APY:    98.9% | Trades:   4 | Win: 100.0% | Final: $ 1187.51 | 129,599 candles
+   📅 Past 6 Months   | APY:    93.6% | Trades:  17 | Win: 100.0% | Final: $ 1068.07 | 258,833 candles
+
+🏆 Sleepy Mac
+   GreedyMACD(5/13/5, patience=2880, margin=0.75%) @ 0.00% loss
+
+   📅 Past 3 Months   | APY:    13.5% | Trades:  61 | Win:  73.3% | Final: $  766.38 | 129,234 candles
+   📅 3-6 Months Ago  | APY:    10.1% | Trades:  32 | Win:  75.0% | Final: $ 1024.37 | 129,599 candles
+   📅 Past 6 Months   | APY:    13.5% | Trades:  91 | Win:  82.2% | Final: $  890.35 | 258,833 candles
+
+================================================================================
+🥇 BEST PERFORMERS
+================================================================================
+   Highest APY:    Grumpy Mom (3-6 Months Ago) → 98.9%
+   Most Trades:    Spicy Mac (Past 3 Months) → 593 trades
+   Best Win Rate:  Grumpy Mom (Past 3 Months) → 100.0%

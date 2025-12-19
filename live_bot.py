@@ -11,6 +11,7 @@ Examples:
     python live_bot.py ema_cross --fast 50 --slow 200 --port 5003
     python live_bot.py momentum --period 10 --buy_threshold 1.0 --sell_threshold -1.0
     python live_bot.py macd --short_window 12 --long_window 26 --signal_window 9
+    python3 live_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 1m --sell_threshold -1.0 --buy_threshold 1.0
 
 Options:
     --fee_rate N          Fee rate as decimal (default: 0.00025 = 0.025% VIP maker)

@@ -35,7 +35,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 AGE_DAYS = 180
 DAYS = 180
 
-GRANULARITY = '5m'
+GRANULARITY = '1m'
 
 def main():
     print("=" * 80)

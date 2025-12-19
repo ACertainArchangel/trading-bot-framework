@@ -90,19 +90,35 @@ def calculate_metrics(bot: Bot, candles: List, trades: int, wins: int, losses: i
     import math
     apy_usd = 0.0
     apy_btc = 0.0
+    
+    # Convert years to seconds for period comparison  
+    total_seconds = years * 365.25 * 24 * 3600
+    
     if initial_usd_baseline > 0 and years > 0:
         try:
             ratio = final_usd_baseline / initial_usd_baseline
-            if ratio > 0:
-                apy_usd = (math.exp(math.log(ratio) / years) - 1) * 100
+            # For periods < 1 day, use simple linear extrapolation to avoid overflow
+            if total_seconds < 86400:  # Less than 1 day
+                return_pct = (ratio - 1) * 100
+                apy_usd = return_pct * (365.25 * 24 * 3600 / total_seconds)
+            else:
+                # For longer periods, use proper compound APY
+                if ratio > 0:
+                    apy_usd = ((ratio ** (1 / years)) - 1) * 100
         except (OverflowError, ValueError):
             apy_usd = 0.0
     
     if initial_crypto_baseline > 0 and years > 0:
         try:
             ratio = final_crypto_baseline / initial_crypto_baseline
-            if ratio > 0:
-                apy_btc = (math.exp(math.log(ratio) / years) - 1) * 100
+            # For periods < 1 day, use simple linear extrapolation to avoid overflow  
+            if total_seconds < 86400:  # Less than 1 day
+                return_pct = (ratio - 1) * 100
+                apy_btc = return_pct * (365.25 * 24 * 3600 / total_seconds)
+            else:
+                # For longer periods, use proper compound APY
+                if ratio > 0:
+                    apy_btc = ((ratio ** (1 / years)) - 1) * 100
         except (OverflowError, ValueError):
             apy_btc = 0.0
     

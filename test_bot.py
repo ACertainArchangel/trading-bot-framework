@@ -17,7 +17,7 @@ Options:
     --starting_currency N Starting USD balance (default: 1000.0)
     --fee_rate N          Fee rate as percentage (default: 0.025)
     --loss_tolerance N    Max acceptable loss % (default: 0.0)
-    --playback_speed N    Replay speed multiplier (default: 0.01)
+    --playback_speed N    Replay speed per candle in seconds (default: 0.001 = fast backtesting)
     --port N              Dashboard port (default: 5003)
     
     Strategy-specific parameters are passed as --param_name value
@@ -82,8 +82,8 @@ def parse_args():
                        help='Fee rate as percentage (default: 0.025)')
     parser.add_argument('--loss_tolerance', type=float, default=0.0,
                        help='Loss tolerance as percentage (default: 0.0)')
-    parser.add_argument('--playback_speed', type=float, default=0.01,
-                       help='Playback speed multiplier (default: 0.01)')
+    parser.add_argument('--playback_speed', type=float, default=0.001,
+                       help='Playback speed per candle in seconds (default: 0.001 = 1000 candles/sec for fast backtesting)')
     parser.add_argument('--port', type=int, default=5003,
                        help='Dashboard port (default: 5003)')
     
@@ -179,7 +179,7 @@ def run_test_bot(args):
         start_date=start_time.isoformat(),
         end_date=end_time.isoformat(),
         playback_speed=args.playback_speed,
-        rate_limit_delay=1.0
+        rate_limit_delay=0.0  # No delay for fast backtesting
     )
     
     main_logger(f"✅ Test stream initialized")

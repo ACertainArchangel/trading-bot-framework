@@ -347,6 +347,9 @@ class Bot:
         while len(ticker_stream.get_candles()) == 0:
             time.sleep(0.1)
         
+        # Store initial candle count for elapsed time calculation
+        self.initial_candle_count = len(ticker_stream.get_candles())
+        
         main_logger("🤖 Bot trading logic started.")
         
         # Initialize baselines

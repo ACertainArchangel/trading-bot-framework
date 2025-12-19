@@ -1,0 +1,86 @@
+[
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "Past 3 Months",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "3-6 Months Ago",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "1m",
+    "period": "Past 6 Months",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "Past 3 Months",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "3-6 Months Ago",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Grumpy Mom",
+    "granularity": "5m",
+    "period": "Past 6 Months",
+    "error": "'Bot' object has no attribute 'process_candle'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "Past 3 Months",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "3-6 Months Ago",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "1m",
+    "period": "Past 6 Months",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "Past 3 Months",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "3-6 Months Ago",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  },
+  {
+    "strategy": "Experimental Mom",
+    "granularity": "5m",
+    "period": "Past 6 Months",
+    "error": "Can't instantiate abstract class ExperimentalMomentumStrategy without an implementation for abstract methods 'buy_signal', 'sell_signal'",
+    "success": false
+  }
+]
