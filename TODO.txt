@@ -1,4 +1,6 @@
-Launch the best strat (dwarf)
+manually test best dwarf to verify APY and results etc
+
+Launch the best strat (grumpy mom dwarf -> GMDStrat)
 
 Make it possible to do a market maker strat where we constantly place buy and sell orders at a spread.
 Do ZCash becausse the spread is bigger than the fee we have to pay and it's still liquid and high

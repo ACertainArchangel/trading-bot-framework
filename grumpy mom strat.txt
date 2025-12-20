@@ -1,0 +1,3 @@
+python test_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --buy_threshold 1.0 --sell_threshold -1.0 --days 365 --loss_tolerance 0.0 --granularity 1m
+
+python3 live_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 1m --sell_threshold -1.0 --buy_threshold 1.0

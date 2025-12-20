@@ -1,0 +1,63 @@
+==========================================================================================
+🏆 RESULTS - SORTED BY REAL APY
+==========================================================================================
+
+Rank  Dwarf                    Real APY    BTC APY   Trades    Win%       Final$       Idle
+------------------------------------------------------------------------------------------
+1     👿 Grumpy Mom               37.57%     59.01%       20  100.0% $  13753.67     216.1d -> Manual test gave 47% APY
+2     😴 Sleepy Mom               37.26%     58.65%       18  100.0% $  13722.80     223.5d
+3     😵 Dizzy Mom                31.28%     51.74%       12  100.0% $  13125.77     213.2d
+4     🦵 Stumpy Mom               25.59%     45.16%       14  100.0% $  12556.93     209.3d
+5     😳 Bashful Mom              25.35%     44.89%       11  100.0% $  12533.35     212.7d
+6     😄 Happy Mom                23.06%     42.24%       16   93.8% $  12304.03     209.3d
+7     🤧 Sneezy Mom               22.24%     41.29%       11  100.0% $  12221.94     209.3d
+8     😤 Cranky Mom               18.26%     36.69%       12  100.0% $  11824.58     209.0d
+9     🥴 Dopey Mom                11.04%     28.34%       16  100.0% $  11102.98     190.5d
+10    👨‍⚕️ Doc Mom                3.87%     20.06%        5  100.0% $  10386.74     180.0d
+
+==========================================================================================
+👑 AND THE WINNER IS...
+==========================================================================================
+
+  🏆 👿 Grumpy Mom 🏆
+     "The original, the legend"
+
+     Real APY:     37.57%
+     BTC APY:      59.01%
+     Final Value:  $13753.67
+     Trades:       20 (20 wins, 0 losses)
+     Win Rate:     100.0%
+     Max Idle:     216.1 days
+
+     Configuration:
+       period=14, patience=1440, margin=1.0%, thresholds=±1.0
+
+==========================================================================================
+📊 COMPARISON TO HODL
+==========================================================================================
+   BTC Price Start:  $101,644.36
+   BTC Price End:    $87,947.99
+   HODL Return:      -13.47%
+
+   Dwarves beating HODL: 10/10
+   Winners: Grumpy, Sleepy, Dizzy, Stumpy, Bashful, Happy, Sneezy, Cranky, Dopey, Doc
+
+==========================================================================================
+✨ May the best dwarf win! ✨
+==========================================================================================
+
+🎉 RESULTS ARE IN!
+
+What a night! The Seven Dwarves (plus 3 forgotten ones) have been tested over a full year of 1-minute candles:
+
+👑 THE WINNER: GRUMPY MOM 👑
+The original legend proves herself once again!
+
+
+Key Takeaways:
+
+ALL 10 dwarves beat HODL (BTC was down -13.47% over this year!)
+Grumpy Mom's config is nearly optimal - period=14, patience=1440, margin=1.0%
+Sleepy Mom came SO close - being more patient (2880 candles) was almost as good
+Happy Mom was the only one with a loss (93.8% win rate) - being too eager has risks
+Doc Mom played it TOO safe - only 5 trades in a year = too conservative

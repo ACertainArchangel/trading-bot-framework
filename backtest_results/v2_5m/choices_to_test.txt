@@ -10,6 +10,7 @@ GreedyMom(p=14, patience=288, margin=1.0%)  @ 0.00% loss #Grumpy mom (champ in b
 [91/285] GreedyMom(p=14, patience=288, margin=1.0%) @ 0.00% loss → APY_USD: 50.4%, Trades: 11, Rejected: 0B/0S
 python3 test_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 1m --age 1 --sell_threshold -1.0 --buy_threshold 1.0 --days 90
 python3 test_bot.py greedy_momentum --period 14 --patience_candles 288 --profit_margin 1.0 --loss_tolerance 0.00 --granularity 5m --age 1 --sell_threshold -1.0 --buy_threshold 1.0 --days 90
+python test_bot.py greedy_momentum --period 14 --patience_candles 1440 --profit_margin 1.0 --buy_threshold 1.0 --sell_threshold -1.0 --days 365 --loss_tolerance 0.0 --granularity 1m <- this one is the champ!!!
 APY_USD approximate calculated from manual testing by hand as verification: 33.472
 
 GreedyMACD(5/13/5, patience=576, margin=0.75%) @ 0.00% loss #Sleepy mac (risk free alternative to spicy mac that still is exciting and high volume)
