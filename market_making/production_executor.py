@@ -656,9 +656,20 @@ class ProductionMarketMaker:
         
         # Our strategy: undercut by minimum tick on both sides
         # We place BUY order at current_bid + min_tick (higher than current best bid)
-        # We place SELL order at current_ask - min_tick (lower than current best ask)
+        # SELL at MINIMUM PROFITABLE PRICE (most aggressive while still profitable)
         our_buy_price = current_bid + min_tick
-        our_sell_price = current_ask - min_tick
+        
+        # Calculate minimum profitable sell price:
+        # sell_value * (1 - fee) >= buy_value * (1 + fee)
+        # sell_price >= buy_price * (1 + fee) / (1 - fee)
+        fee = self.EXPECTED_FEE_RATE
+        min_profitable_sell_continuous = our_buy_price * (1 + fee) / (1 - fee)
+        min_profitable_sell_ticks = math.ceil(min_profitable_sell_continuous / min_tick)
+        our_sell_price = min_profitable_sell_ticks * min_tick
+        
+        # Must be below best_ask to be competitive
+        if our_sell_price >= current_ask:
+            raise SpreadTooTightError(f"Min profitable sell {our_sell_price:.{precision}f} >= best_ask {current_ask:.{precision}f}")
         
         # Ensure we don't cross the spread
         if our_buy_price >= our_sell_price:
@@ -765,11 +776,28 @@ class ProductionMarketMaker:
                 spread = current_ask - current_bid
                 spread_pct = spread / book.mid_price
                 
-                # Our undercut prices
+                # AGGRESSIVE PRICING STRATEGY:
+                # BUY at best_bid + 1 tick (standard undercut to be first in queue)
+                # SELL at MINIMUM PROFITABLE PRICE (most aggressive while still profitable)
                 our_buy_price = current_bid + min_tick
-                our_sell_price = current_ask - min_tick
                 
-                # Skip if crossed spread
+                # Calculate minimum profitable sell price:
+                # sell_value * (1 - fee) >= buy_value * (1 + fee)
+                # sell_price >= buy_price * (1 + fee) / (1 - fee)
+                fee = self.EXPECTED_FEE_RATE
+                min_profitable_sell_continuous = our_buy_price * (1 + fee) / (1 - fee)
+                
+                # Round UP to next tick (must meet or exceed break-even)
+                min_profitable_sell_ticks = math.ceil(min_profitable_sell_continuous / min_tick)
+                our_sell_price = min_profitable_sell_ticks * min_tick
+                
+                # Must still be below best_ask to be competitive
+                if our_sell_price >= current_ask:
+                    # Even minimum profitable price isn't competitive - skip
+                    time.sleep(poll_interval)
+                    continue
+                
+                # Skip if crossed spread (shouldn't happen but safety check)
                 if our_buy_price >= our_sell_price:
                     time.sleep(poll_interval)
                     continue
@@ -880,13 +908,25 @@ class ProductionMarketMaker:
         self._log("")
         self._log("⚡ STEP 1: Placing BOTH orders SIMULTANEOUSLY...")
         
-        # Use the already properly rounded size from analysis, but double-check rounding
-        buy_size_from_analysis = analysis["buy_size_asset"]
-        buy_size_rounded = self._round_size_for_product(buy_size_from_analysis, self.product_id)
+        # CRITICAL: Use SAME size for both BUY and SELL orders
+        # The analysis buy_size might exceed our actual asset balance because:
+        #   - trade_size_usd is based on asset_value at MID price
+        #   - buy_size is calculated using BUY price (which is lower)
+        #   - This means buy_size can exceed actual asset holdings!
+        # Fix: Take the minimum of calculated size and actual asset balance
         
-        # Debug: verify proper rounding
-        if buy_size_rounded != buy_size_from_analysis:
-            self._log(f"⚠️  Size re-rounded: {buy_size_from_analysis} → {buy_size_rounded}")
+        buy_size_from_analysis = analysis["buy_size_asset"]
+        usd_balance, asset_balance = self.client.get_balances()
+        
+        # Size must work for BOTH sides: what we can buy AND what we can sell
+        trade_size_raw = min(buy_size_from_analysis, asset_balance.available)
+        trade_size = self._round_size_for_product(trade_size_raw, self.product_id)
+        
+        # Use SAME size for both orders
+        buy_size_rounded = trade_size
+        sell_size_rounded = trade_size
+        
+        self._log(f"📊 Trade size: {trade_size} (analysis: {buy_size_from_analysis}, available: {asset_balance.available})")
         
         buy_price = analysis["our_buy_price"]
         sell_price = analysis["our_sell_price"]
@@ -902,13 +942,6 @@ class ProductionMarketMaker:
                 price=analysis["our_buy_price"],  # Use our undercut price
                 post_only=True
             )
-            
-            # Place SELL order immediately (using current asset balance)
-            usd_balance, asset_balance = self.client.get_balances()
-            sell_size_raw = min(buy_size_rounded, asset_balance.available)  # Don't oversell
-            
-            # Round the sell size using centralized function
-            sell_size_rounded = self._round_size_for_product(sell_size_raw, self.product_id)
             
             sell_order_id = self.client.place_limit_order(
                 side="SELL",
@@ -1000,14 +1033,20 @@ class ProductionMarketMaker:
                     
                     if buy_fill and not sell_fill:
                         # BUY filled, SELL stuck
-                        # Break-even (continuous): sell_price >= buy_price * (1 + fee) / (1 - fee)
-                        breakeven_sell_continuous = buy_fill.average_price * (1 + self.EXPECTED_FEE_RATE) / (1 - self.EXPECTED_FEE_RATE)
+                        # We need: sell_value_after_fee >= buy_value + buy_fee
+                        # sell_price * sell_size * (1 - fee) >= buy_value + buy_fee
+                        # sell_price >= (buy_value + buy_fee) / (sell_size * (1 - fee))
+                        
+                        total_cost = buy_fill.filled_value + buy_fill.fee_amount
+                        breakeven_sell_continuous = total_cost / (sell_size_rounded * (1 - self.EXPECTED_FEE_RATE))
                         
                         # DISCRETE: Round UP to next tick (we need at least this much to not lose)
                         breakeven_sell_ticks = math.ceil(breakeven_sell_continuous / min_tick)
                         breakeven_sell = breakeven_sell_ticks * min_tick
                         
                         self._log(f"🔄 30s timeout - requoting SELL at BREAK-EVEN (maker)")
+                        self._log(f"   BUY cost: ${total_cost:.6f} (value + fee)")
+                        self._log(f"   SELL size: {sell_size_rounded} (need to recover cost)")
                         self._log(f"   Continuous break-even: ${breakeven_sell_continuous:.6f}")
                         self._log(f"   Discrete (tick-rounded UP): ${breakeven_sell:.{precision}f}")
                         self._log(f"   (Original: ${original_sell_price:.{precision}f}, BUY filled @ ${buy_fill.average_price:.{precision}f})")
@@ -1025,14 +1064,21 @@ class ProductionMarketMaker:
                     
                     elif sell_fill and not buy_fill:
                         # SELL filled, BUY stuck
-                        # Break-even (continuous): buy_price <= sell_price * (1 - fee) / (1 + fee)
-                        breakeven_buy_continuous = sell_fill.average_price * (1 - self.EXPECTED_FEE_RATE) / (1 + self.EXPECTED_FEE_RATE)
+                        # We received: sell_value - sell_fee
+                        # We need: buy_value + buy_fee <= sell_value - sell_fee
+                        # buy_price * buy_size * (1 + fee) <= sell_value - sell_fee
+                        # buy_price <= (sell_value - sell_fee) / (buy_size * (1 + fee))
+                        
+                        total_proceeds = sell_fill.filled_value - sell_fill.fee_amount
+                        breakeven_buy_continuous = total_proceeds / (buy_size_rounded * (1 + self.EXPECTED_FEE_RATE))
                         
                         # DISCRETE: Round DOWN to previous tick (we can pay at most this much to not lose)
                         breakeven_buy_ticks = math.floor(breakeven_buy_continuous / min_tick)
                         breakeven_buy = breakeven_buy_ticks * min_tick
                         
                         self._log(f"🔄 30s timeout - requoting BUY at BREAK-EVEN (maker)")
+                        self._log(f"   SELL proceeds: ${total_proceeds:.6f} (value - fee)")
+                        self._log(f"   BUY size: {buy_size_rounded} (can spend up to proceeds)")
                         self._log(f"   Continuous break-even: ${breakeven_buy_continuous:.6f}")
                         self._log(f"   Discrete (tick-rounded DOWN): ${breakeven_buy:.{precision}f}")
                         self._log(f"   (Original: ${original_buy_price:.{precision}f}, SELL filled @ ${sell_fill.average_price:.{precision}f})")
@@ -1286,9 +1332,21 @@ def main():
             spread = current_ask - current_bid
             spread_pct = spread / book.mid_price
             
-            # Our undercut prices
+            # AGGRESSIVE PRICING STRATEGY:
+            # BUY at best_bid + 1 tick (standard undercut)
+            # SELL at MINIMUM PROFITABLE PRICE (most aggressive)
             our_buy_price = current_bid + min_tick
-            our_sell_price = current_ask - min_tick
+            
+            # Calculate minimum profitable sell price
+            fee = mm.EXPECTED_FEE_RATE
+            min_profitable_sell_continuous = our_buy_price * (1 + fee) / (1 - fee)
+            min_profitable_sell_ticks = math.ceil(min_profitable_sell_continuous / min_tick)
+            our_sell_price = min_profitable_sell_ticks * min_tick
+            
+            # Must be below best_ask to be competitive
+            if our_sell_price >= current_ask:
+                time.sleep(0.5)
+                continue
             
             # Skip if crossed spread
             if our_buy_price >= our_sell_price:
