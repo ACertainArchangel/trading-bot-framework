@@ -28,6 +28,8 @@ A modular, production-ready algorithmic trading system with paper trading, live 
 
 ### Paper Trading (Test Mode)
 ```bash
+cd vanilla_trader
+
 # Test EMA(50/200) Golden Cross strategy on 10 days of historical data
 python test_bot.py ema_cross --fast 50 --slow 200 --days 10
 
@@ -39,14 +41,18 @@ python test_bot.py momentum --period 10 --buy_threshold 1.0 --sell_threshold -1.
 ⚠️ **WARNING: This trades with REAL MONEY on Coinbase!**
 
 ```bash
+cd vanilla_trader
+
 # Live trade with EMA(50/200) strategy
 python live_bot.py ema_cross --fast 50 --slow 200
 ```
 
 ### Backtesting
 ```bash
+cd vanilla_trader
+
 # Test multiple strategies with various loss tolerance levels
-python backtest_strategies.py
+python backtest_main.py
 ```
 
 ## 💾 Installation
@@ -76,6 +82,7 @@ Paper trading lets you test strategies on historical data with zero risk.
 
 ### Basic Usage
 ```bash
+cd vanilla_trader
 python test_bot.py <strategy> [options]
 ```
 
@@ -91,6 +98,8 @@ python test_bot.py <strategy> [options]
 
 ### Examples
 ```bash
+cd vanilla_trader
+
 # Test EMA(9/26) with 30 days of data
 python test_bot.py ema_cross --fast 9 --slow 26 --days 30
 
@@ -124,6 +133,7 @@ Live trading executes real trades on Coinbase using your API credentials.
 
 3. **Run Live Bot**
 ```bash
+cd vanilla_trader
 python live_bot.py <strategy> [options]
 ```
 
@@ -144,6 +154,8 @@ python live_bot.py <strategy> [options]
 
 ### Examples
 ```bash
+cd vanilla_trader
+
 # Conservative EMA(50/200) with no loss tolerance
 python live_bot.py ema_cross --fast 50 --slow 200 --loss_tolerance 0.0
 
@@ -163,7 +175,8 @@ Backtest strategies with multiple parameter configurations and loss tolerance le
 
 ### Consolidated Backtester
 ```bash
-python backtest_strategies.py
+cd vanilla_trader
+python backtest_main.py
 ```
 
 This tests:
@@ -326,55 +339,63 @@ Indicators auto-update every 10 candles and persist across chart interactions.
 .
 ├── README.md                          # This file
 ├── BOT_USAGE.md                       # Detailed bot usage guide
-├── test_bot.py                        # Generic paper trading bot
-├── live_bot.py                        # Generic live trading bot
-├── backtest_strategies.py             # Consolidated backtester
-├── trader_bot.py                      # Core Bot class
-├── web_dashboard.py                   # Flask + SocketIO dashboard
-├── backtest_lib.py                    # Backtesting framework
-├── CBData.py                          # Coinbase data fetcher
+├── MYFAVBOTS.md                       # Favorite bot configurations
 ├── secrets/                           # API credentials (not in git)
 │   ├── secrets1.json                  # Instance 1 credentials
 │   ├── secrets2.json                  # Instance 2 credentials (optional)
 │   └── ...
-├── logs/                              # Bot logs (not in git)
-│   ├── bot_1_main.log                 # Instance 1 main log
-│   ├── bot_1_stream.log               # Instance 1 stream log
-│   └── ...
 │
-├── strategies/                        # Trading strategies
-│   ├── README.md                      # Strategy documentation
-│   ├── base.py                        # Abstract Strategy class
-│   ├── ema_cross.py                   # EMA crossover
-│   ├── momentum.py                    # ROC momentum
-│   ├── macd.py                        # MACD with trajectory
-│   ├── rsi.py                         # RSI
-│   ├── bollinger.py                   # Bollinger Bands
-│   ├── stochastic.py                  # Stochastic Oscillator
-│   └── mean_reversion.py              # Mean Reversion
+├── vanilla_trader/                    # Main trading system (~27% APY)
+│   ├── README.md                      # Vanilla trader documentation
+│   ├── test_bot.py                    # Paper trading bot
+│   ├── live_bot.py                    # Live trading bot
+│   ├── trader_bot.py                  # Core Bot class
+│   ├── backtest_main.py               # Consolidated backtester
+│   ├── backtest_lib.py                # Backtesting framework
+│   ├── web_dashboard.py               # Flask + SocketIO dashboard
+│   ├── CBData.py                      # Coinbase data fetcher
+│   ├── TickerStream.py                # WebSocket ticker stream
+│   ├── bot_logger.py                  # Logging utilities
+│   │
+│   ├── strategies/                    # Trading strategies
+│   │   ├── README.md                  # Strategy documentation
+│   │   ├── base.py                    # Abstract Strategy class
+│   │   ├── ema_cross.py               # EMA crossover
+│   │   ├── momentum.py                # ROC momentum
+│   │   ├── macd.py                    # MACD with trajectory
+│   │   ├── rsi.py                     # RSI
+│   │   ├── bollinger.py               # Bollinger Bands
+│   │   ├── stochastic.py              # Stochastic Oscillator
+│   │   └── mean_reversion.py          # Mean Reversion
+│   │
+│   ├── interfaces/                    # Exchange interfaces
+│   │   ├── PaperTradingInterface.py   # Simulated trading
+│   │   └── CoinbaseAdvancedTradeInterface.py  # Coinbase API
+│   │
+│   ├── streams/                       # WebSocket streams
+│   ├── templates/                     # Dashboard HTML
+│   ├── backtest_results/              # Backtest output files
+│   └── logs/                          # Bot logs
 │
-├── interfaces/                        # Exchange interfaces
-│   ├── PaperTradingInterface.py       # Simulated trading
-│   └── CoinbaseAdvancedTradeInterface.py  # Coinbase API
+├── aggressive_trader/                 # NEW: SL/TP enabled trading (in development)
+│   ├── README.md                      # Framework documentation
+│   ├── position.py                    # Position tracking with SL/TP
+│   ├── order_manager.py               # Bracket order management
+│   ├── bot.py                         # Aggressive bot main class
+│   └── strategies/                    # Aggressive strategies
+│       └── base.py                    # AggressiveStrategy base class
 │
-├── templates/                         # Dashboard HTML
-│   └── dashboard.html
-│
-├── backtest_results/                  # Backtest output files
-│   ├── backtest_strategies_*.json     # Results data
-│   └── backtest_strategies_*.txt      # Human-readable summaries
-│
-└── old_bots/                          # Legacy bot scripts
-    └── old_backtests/                 # Legacy backtest scripts
+└── market_making/                     # DEPRECATED - see README
+    └── README.md                      # Deprecation notice
 ```
 
 ## 🔧 Creating Custom Strategies
 
-See `strategies/README.md` for detailed instructions.
+See `vanilla_trader/strategies/README.md` for detailed instructions.
 
 ### Quick Example
 
-1. Create file in `strategies/` directory:
+1. Create file in `vanilla_trader/strategies/` directory:
 
 ```python
 from typing import List, Tuple
@@ -420,7 +441,7 @@ class MyStrategy(Strategy):
         ]
 ```
 
-2. Add to `strategies/__init__.py`:
+2. Add to `vanilla_trader/strategies/__init__.py`:
 ```python
 from .my_strategy import MyStrategy
 __all__ = ['Strategy', 'MyStrategy', ...]
@@ -428,7 +449,7 @@ __all__ = ['Strategy', 'MyStrategy', ...]
 
 3. Register in bot scripts:
 ```python
-# In test_bot.py and live_bot.py
+# In vanilla_trader/test_bot.py and live_bot.py
 STRATEGIES = {
     'my_strategy': MyStrategy,
     # ... other strategies
@@ -437,6 +458,7 @@ STRATEGIES = {
 
 4. Test it:
 ```bash
+cd vanilla_trader
 python test_bot.py my_strategy --my_param 20
 ```
 

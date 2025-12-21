@@ -8,6 +8,8 @@ A modular algorithmic trading bot system with paper trading and live trading cap
 Test strategies on historical data with no risk:
 
 ```bash
+cd vanilla_trader
+
 # Test EMA(50/200) Golden Cross strategy
 python test_bot.py ema_cross --fast 50 --slow 200 --days 10
 
@@ -22,6 +24,8 @@ python test_bot.py ema_cross --fast 9 --slow 26 --days 30 --granularity 15m --po
 ⚠️ **WARNING: Trades with REAL MONEY on Coinbase!**
 
 ```bash
+cd vanilla_trader
+
 # Live trade with EMA(50/200) strategy
 python live_bot.py ema_cross --fast 50 --slow 200
 
@@ -87,6 +91,7 @@ Relative Strength Index strategy.
 ## Test Bot Options
 
 ```bash
+cd vanilla_trader
 python test_bot.py <strategy> [options]
 
 Options:
@@ -102,6 +107,7 @@ Options:
 ## Live Bot Options
 
 ```bash
+cd vanilla_trader
 python live_bot.py <strategy> [options]
 
 Options:
@@ -129,6 +135,7 @@ Options:
 
 3. **Run Live Bot**
    ```bash
+   cd vanilla_trader
    python live_bot.py ema_cross --fast 50 --slow 200
    ```
 
