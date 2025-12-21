@@ -180,6 +180,151 @@ class TradeRoundResult:
 
 
 # =============================================================================
+# MOMENTUM TRACKER - Adaptive Skewing
+# =============================================================================
+
+class MomentumTracker:
+    """
+    Tracks short-term price momentum for adaptive order skewing.
+    
+    Strategy:
+    - Track recent mid prices over a rolling window
+    - Calculate momentum as price change rate (EMA-smoothed)
+    - Return skew factor: positive = uptrend, negative = downtrend
+    
+    Usage:
+    - Uptrend (skew > 0): Buy more aggressively (higher), sell less aggressively (higher)
+    - Downtrend (skew < 0): Buy less aggressively (lower), sell more aggressively (lower)
+    """
+    
+    def __init__(
+        self,
+        window_size: int = 20,
+        ema_alpha: float = 0.3,
+        max_skew_ticks: int = 2,
+        logger: Optional[Callable[[str], None]] = None
+    ):
+        """
+        Args:
+            window_size: Number of price observations to track
+            ema_alpha: EMA smoothing factor (higher = more responsive)
+            max_skew_ticks: Maximum ticks to skew in either direction
+            logger: Logging callback
+        """
+        self.window_size = window_size
+        self.ema_alpha = ema_alpha
+        self.max_skew_ticks = max_skew_ticks
+        self._log = logger or (lambda x: None)
+        
+        # Price history
+        self.prices: List[float] = []
+        self.timestamps: List[float] = []
+        
+        # Smoothed momentum (EMA of returns)
+        self.ema_momentum: float = 0.0
+        
+        # Stats
+        self.total_updates = 0
+    
+    def update(self, mid_price: float) -> None:
+        """Add new price observation."""
+        now = time.time()
+        
+        # Calculate return if we have history
+        if len(self.prices) > 0:
+            last_price = self.prices[-1]
+            if last_price > 0:
+                ret = (mid_price - last_price) / last_price
+                # Update EMA momentum
+                self.ema_momentum = self.ema_alpha * ret + (1 - self.ema_alpha) * self.ema_momentum
+        
+        # Add to history
+        self.prices.append(mid_price)
+        self.timestamps.append(now)
+        
+        # Trim to window size
+        if len(self.prices) > self.window_size:
+            self.prices.pop(0)
+            self.timestamps.pop(0)
+        
+        self.total_updates += 1
+    
+    def get_momentum(self) -> float:
+        """
+        Get current momentum value.
+        
+        Returns:
+            Momentum as percentage (e.g., 0.001 = 0.1% per observation)
+        """
+        return self.ema_momentum
+    
+    def get_skew_ticks(self, min_tick: float) -> int:
+        """
+        Get recommended skew in ticks based on momentum.
+        
+        Returns:
+            Integer ticks to skew: positive = uptrend, negative = downtrend
+        """
+        if len(self.prices) < 3:
+            return 0  # Not enough data (reduced from 5)
+        
+        # Scale momentum to tick skew (MORE AGGRESSIVE)
+        # Typical momentum is ~0.0001-0.001 per observation
+        # We want ~1-3 ticks even for moderate momentum
+        momentum_scaled = self.ema_momentum * 20000  # 2x more sensitive (was 10000)
+        
+        # Clamp to max skew
+        skew = max(-self.max_skew_ticks, min(self.max_skew_ticks, int(momentum_scaled)))
+        
+        return skew
+    
+    def get_skew_prices(
+        self,
+        base_buy_price: float,
+        base_sell_price: float,
+        min_tick: float
+    ) -> Tuple[float, float]:
+        """
+        Apply momentum skew to base prices.
+        
+        Args:
+            base_buy_price: Original buy price (before skew)
+            base_sell_price: Original sell price (before skew)
+            min_tick: Minimum price tick
+            
+        Returns:
+            Tuple of (skewed_buy_price, skewed_sell_price)
+        """
+        skew_ticks = self.get_skew_ticks(min_tick)
+        skew_amount = skew_ticks * min_tick
+        
+        # Apply skew to BOTH prices in same direction
+        # Uptrend (skew > 0): shift both UP
+        # Downtrend (skew < 0): shift both DOWN
+        skewed_buy = base_buy_price + skew_amount
+        skewed_sell = base_sell_price + skew_amount
+        
+        return (skewed_buy, skewed_sell)
+    
+    def get_stats(self) -> Dict:
+        """Get tracker statistics."""
+        return {
+            "window_size": self.window_size,
+            "observations": len(self.prices),
+            "total_updates": self.total_updates,
+            "ema_momentum": self.ema_momentum,
+            "momentum_bps": self.ema_momentum * 10000,
+            "current_skew_ticks": self.get_skew_ticks(0.0001),  # Assuming 4 decimal price
+            "price_range": (min(self.prices), max(self.prices)) if self.prices else (0, 0),
+        }
+    
+    def __str__(self) -> str:
+        skew = self.get_skew_ticks(0.0001)
+        direction = "↑" if skew > 0 else "↓" if skew < 0 else "→"
+        return f"Momentum: {self.ema_momentum*10000:+.2f}bps {direction} (skew: {skew:+d} ticks)"
+
+
+# =============================================================================
 # COINBASE API CLIENT
 # =============================================================================
 
@@ -311,6 +456,7 @@ class CoinbaseProductionClient:
         # Get size precision for this product
         size_precision_map = {
             'WET-USD': 1,    # 0.1 WET minimum (base_increment=0.1)
+            'TROLL-USD': 1,  # 0.1 TROLL minimum (base_increment=0.1)
             'BONK-USD': 0,   # Whole numbers only
             'GIGA-USD': 4,   # 0.0001 GIGA
             'VVV-USD': 6,    # 0.000001 VVV
@@ -517,6 +663,14 @@ class ProductionMarketMaker:
         # Initialize order book fetcher
         self.order_book = CoinbaseOrderBook(product_id=product_id)
         
+        # Initialize momentum tracker for adaptive skewing (AGGRESSIVE settings)
+        self.momentum = MomentumTracker(
+            window_size=10,      # Shorter window for faster reaction (was 20)
+            ema_alpha=0.5,       # Very responsive EMA (was 0.3)
+            max_skew_ticks=3,    # Allow up to 3 ticks skew (was 2)
+            logger=self._log
+        )
+        
         # Trade history
         self.completed_rounds: List[TradeRoundResult] = []
         self.total_profit: float = 0.0
@@ -534,6 +688,7 @@ class ProductionMarketMaker:
         self._log(f"Fee Tolerance: ±{self.FEE_TOLERANCE*100:.4f}%")
         self._log(f"Min Spread for Profit: {self.min_spread_for_profit*100:.4f}%")
         self._log(f"Trade Size Range: ${min_trade_usd:.2f} - ${max_trade_usd:.2f}")
+        self._log(f"Momentum Tracking: window={self.momentum.window_size}, max_skew={self.momentum.max_skew_ticks} ticks")
         self._log("=" * 70)
     
     @staticmethod
@@ -541,6 +696,7 @@ class ProductionMarketMaker:
         """Get size precision for any product - centralized logic."""
         size_precision_map = {
             'WET-USD': 1,    # 0.1 WET minimum (base_increment=0.1)
+            'TROLL-USD': 1,  # 0.1 TROLL minimum (base_increment=0.1)
             'BONK-USD': 0,   # Whole numbers only
             'GIGA-USD': 4,   # 0.0001 GIGA
             'VVV-USD': 6,    # 0.000001 VVV
@@ -623,6 +779,7 @@ class ProductionMarketMaker:
         # Size precision rules per trading pair (from Coinbase base_increment)
         size_precision_map = {
             'WET-USD': 1,    # 0.1 WET minimum (base_increment=0.1)
+            'TROLL-USD': 1,  # 0.1 TROLL minimum (base_increment=0.1)
             'BONK-USD': 0,   # Whole numbers only
             'GIGA-USD': 4,   # 0.0001 GIGA
             'VVV-USD': 6,    # 0.000001 VVV
@@ -776,20 +933,36 @@ class ProductionMarketMaker:
                 spread = current_ask - current_bid
                 spread_pct = spread / book.mid_price
                 
-                # AGGRESSIVE PRICING STRATEGY:
-                # BUY at best_bid + 1 tick (standard undercut to be first in queue)
-                # SELL at MINIMUM PROFITABLE PRICE (most aggressive while still profitable)
-                our_buy_price = current_bid + min_tick
+                # Update momentum tracker with current mid price
+                self.momentum.update(book.mid_price)
+                
+                # AGGRESSIVE PRICING STRATEGY WITH MOMENTUM SKEWING:
+                # 1. Base BUY at best_bid + 1 tick
+                # 2. Base SELL at minimum profitable price
+                # 3. Apply momentum skew to both prices
+                
+                base_buy_price = current_bid + min_tick
                 
                 # Calculate minimum profitable sell price:
                 # sell_value * (1 - fee) >= buy_value * (1 + fee)
                 # sell_price >= buy_price * (1 + fee) / (1 - fee)
                 fee = self.EXPECTED_FEE_RATE
-                min_profitable_sell_continuous = our_buy_price * (1 + fee) / (1 - fee)
+                min_profitable_sell_continuous = base_buy_price * (1 + fee) / (1 - fee)
                 
                 # Round UP to next tick (must meet or exceed break-even)
                 min_profitable_sell_ticks = math.ceil(min_profitable_sell_continuous / min_tick)
-                our_sell_price = min_profitable_sell_ticks * min_tick
+                base_sell_price = min_profitable_sell_ticks * min_tick
+                
+                # Apply momentum skew
+                skew_ticks = self.momentum.get_skew_ticks(min_tick)
+                skew_amount = skew_ticks * min_tick
+                our_buy_price = base_buy_price + skew_amount
+                our_sell_price = base_sell_price + skew_amount
+                
+                # Safety: Ensure buy price stays above current bid (still competitive)
+                if our_buy_price <= current_bid:
+                    our_buy_price = current_bid + min_tick
+                    our_sell_price = base_sell_price  # Reset sell skew too
                 
                 # Must still be below best_ask to be competitive
                 if our_sell_price >= current_ask:
@@ -815,16 +988,17 @@ class ProductionMarketMaker:
                 net_profit = gross_profit - total_fees
                 net_profit_pct = net_profit / buy_value
                 
-                # Log spread changes
+                # Log spread changes (with momentum info)
                 if last_spread is None or abs(spread_pct - last_spread) > 0.001:  # 0.001% change
                     elapsed = time.time() - start_time
-                    self._log(f"   [{elapsed:4.1f}s] Spread: {spread_pct*100:.4f}% → Net: {net_profit_pct*100:+.4f}%")
+                    skew_dir = "↑" if skew_ticks > 0 else "↓" if skew_ticks < 0 else "→"
+                    self._log(f"   [{elapsed:4.1f}s] Spread: {spread_pct*100:.4f}% → Net: {net_profit_pct*100:+.4f}% | Mom: {skew_dir}{abs(skew_ticks)}t")
                     last_spread = spread_pct
                 
                 # Check if profitable
                 if net_profit > 0 and net_profit_pct >= self.MIN_PROFIT_RATE:
                     elapsed = time.time() - start_time
-                    self._log(f"✨ PROFITABLE OPPORTUNITY DETECTED after {elapsed:.1f}s!")
+                    self._log(f"✨ PROFITABLE OPPORTUNITY DETECTED after {elapsed:.1f}s! (Momentum skew: {skew_ticks:+d} ticks)")
                     
                     # Return full analysis
                     return {
@@ -838,6 +1012,7 @@ class ProductionMarketMaker:
                         "spread_pct": spread_pct,
                         "precision": precision,
                         "min_tick": min_tick,
+                        "momentum_skew_ticks": skew_ticks,
                         "trade_size_usd": trade_size_usd,
                         "buy_size_asset": buy_size_asset,
                         "buy_value": buy_value,
@@ -964,23 +1139,52 @@ class ProductionMarketMaker:
         self._log(f"   BUY:  {buy_size_rounded:.2f} WET @ ${analysis['our_buy_price']:.4f}")
         self._log(f"   SELL: {sell_size_rounded:.2f} WET @ ${analysis['our_sell_price']:.4f}")
         
-        # Step 4: Wait for BOTH orders to fill - WITH BREAK-EVEN REQUOTE AFTER 30s
+        # Step 4: Wait for BOTH orders to fill - WITH AGGRESSIVE CONTINUOUS REQUOTING
         self._log("")
-        self._log("⏳ Waiting for BOTH orders to fill (will requote at break-even after 30s if stuck)...")
+        self._log("⏳ Waiting for fills (aggressive requoting if undercut)...")
         
         buy_fill = None
         sell_fill = None
         elapsed = 0.0
-        breakeven_requoted = False
-        BREAKEVEN_TIMEOUT = 30.0  # After 30s, requote at break-even
         
-        # Track original prices for break-even calculation
-        original_buy_price = analysis["our_buy_price"]
-        original_sell_price = analysis["our_sell_price"]
+        # Track current order prices and IDs
+        current_buy_price = analysis["our_buy_price"]
+        current_sell_price = analysis["our_sell_price"]
+        min_tick = analysis["min_tick"]
+        precision = analysis["precision"]
+        fee = self.EXPECTED_FEE_RATE
+        
+        # Requote tracking
+        buy_requotes = 0
+        sell_requotes = 0
+        MAX_REQUOTES = 10  # Safety limit
+        REQUOTE_COOLDOWN = 1.0  # Minimum seconds between requotes
+        last_buy_requote = 0.0
+        last_sell_requote = 0.0
         
         # Poll both orders until BOTH fill
         while True:
-            # Check BUY order status
+            loop_start = time.time()
+            
+            # Get current order book for requote decisions
+            try:
+                book = self.order_book.fetch_order_book(limit=5)
+                current_best_bid = book.best_bid.price if book.best_bid else 0
+                current_best_ask = book.best_ask.price if book.best_ask else float('inf')
+            except:
+                current_best_bid = 0
+                current_best_ask = float('inf')
+            
+            # ================================================================
+            # PHASE 1: Check BOTH order statuses FIRST (before any requoting)
+            # This prevents race conditions where we requote before knowing
+            # the other side has filled
+            # ================================================================
+            
+            buy_status = None
+            sell_status = None
+            
+            # Check BUY status
             if buy_fill is None:
                 buy_order = self.client.get_order_status(buy_order_id)
                 buy_status = buy_order.get('status', 'UNKNOWN')
@@ -1000,7 +1204,7 @@ class ProductionMarketMaker:
                 elif buy_status in ['CANCELLED', 'EXPIRED', 'FAILED']:
                     raise OrderExecutionError(f"BUY order failed: {buy_status}")
             
-            # Check SELL order status
+            # Check SELL status
             if sell_fill is None:
                 sell_order = self.client.get_order_status(sell_order_id)
                 sell_status = sell_order.get('status', 'UNKNOWN')
@@ -1024,84 +1228,165 @@ class ProductionMarketMaker:
             if buy_fill and sell_fill:
                 break
             
-            # BREAK-EVEN REQUOTE: After 30s, if one-legged, requote at break-even price (DISCRETE TICKS)
-            if elapsed >= BREAKEVEN_TIMEOUT and not breakeven_requoted:
-                if (buy_fill and not sell_fill) or (sell_fill and not buy_fill):
-                    breakeven_requoted = True
-                    min_tick = analysis["min_tick"]
-                    precision = analysis["precision"]
+            # ================================================================
+            # PHASE 2: Requote logic (now with accurate fill status)
+            # ================================================================
+            
+            # BUY requote logic (only if BUY not filled)
+            if buy_fill is None and buy_status not in ['CANCELLED', 'EXPIRED', 'FAILED']:
+                # CRITICAL: If SELL already filled, we CANNOT raise BUY above break-even!
+                if sell_fill:
+                    # SELL filled first - calculate max buy price for break-even
+                    total_proceeds = sell_fill.filled_value - sell_fill.fee_amount
+                    max_buy_continuous = total_proceeds / (buy_size_rounded * (1 + fee))
+                    max_buy_ticks = math.floor(max_buy_continuous / min_tick)
+                    max_buy_price = max_buy_ticks * min_tick
                     
-                    if buy_fill and not sell_fill:
-                        # BUY filled, SELL stuck
-                        # We need: sell_value_after_fee >= buy_value + buy_fee
-                        # sell_price * sell_size * (1 - fee) >= buy_value + buy_fee
-                        # sell_price >= (buy_value + buy_fee) / (sell_size * (1 - fee))
+                    # Can we improve our position without exceeding break-even?
+                    if (current_best_bid > current_buy_price + 0.5 * min_tick and
+                        buy_requotes < MAX_REQUOTES and
+                        (elapsed - last_buy_requote) > REQUOTE_COOLDOWN):
                         
-                        total_cost = buy_fill.filled_value + buy_fill.fee_amount
-                        breakeven_sell_continuous = total_cost / (sell_size_rounded * (1 - self.EXPECTED_FEE_RATE))
+                        new_buy_price = min(current_best_bid + min_tick, max_buy_price)
                         
-                        # DISCRETE: Round UP to next tick (we need at least this much to not lose)
-                        breakeven_sell_ticks = math.ceil(breakeven_sell_continuous / min_tick)
-                        breakeven_sell = breakeven_sell_ticks * min_tick
+                        if new_buy_price > current_buy_price:
+                            self._log(f"🔄 BUY requote (SELL filled): ${current_buy_price:.{precision}f} → ${new_buy_price:.{precision}f} (max: ${max_buy_price:.{precision}f})")
+                            self.client.cancel_order(buy_order_id)
+                            try:
+                                buy_order_id = self.client.place_limit_order(
+                                    side="BUY", size=buy_size_rounded,
+                                    price=new_buy_price, post_only=True
+                                )
+                                current_buy_price = new_buy_price
+                                buy_requotes += 1
+                                last_buy_requote = elapsed
+                            except Exception as e:
+                                self._log(f"⚠️  BUY requote failed: {e}")
+                else:
+                    # SELL not filled yet - can chase bid but NEVER above our pending sell price!
+                    if (current_best_bid > current_buy_price + 0.5 * min_tick and 
+                        buy_requotes < MAX_REQUOTES and
+                        (elapsed - last_buy_requote) > REQUOTE_COOLDOWN):
                         
-                        self._log(f"🔄 30s timeout - requoting SELL at BREAK-EVEN (maker)")
-                        self._log(f"   BUY cost: ${total_cost:.6f} (value + fee)")
-                        self._log(f"   SELL size: {sell_size_rounded} (need to recover cost)")
-                        self._log(f"   Continuous break-even: ${breakeven_sell_continuous:.6f}")
-                        self._log(f"   Discrete (tick-rounded UP): ${breakeven_sell:.{precision}f}")
-                        self._log(f"   (Original: ${original_sell_price:.{precision}f}, BUY filled @ ${buy_fill.average_price:.{precision}f})")
+                        new_buy_price = current_best_bid + min_tick
                         
-                        # Cancel old sell order
-                        self.client.cancel_order(sell_order_id)
+                        # CRITICAL: Calculate min profitable sell price for this buy
+                        min_sell_for_profit = new_buy_price * (1 + fee) / (1 - fee)
+                        min_sell_ticks = math.ceil(min_sell_for_profit / min_tick)
+                        required_sell_price = min_sell_ticks * min_tick
                         
-                        # Place new sell order at discrete break-even (MAKER - post_only=True)
-                        sell_order_id = self.client.place_limit_order(
-                            side="SELL",
-                            size=sell_size_rounded,
-                            price=breakeven_sell,
-                            post_only=True  # Stay maker
-                        )
-                    
-                    elif sell_fill and not buy_fill:
-                        # SELL filled, BUY stuck
-                        # We received: sell_value - sell_fee
-                        # We need: buy_value + buy_fee <= sell_value - sell_fee
-                        # buy_price * buy_size * (1 + fee) <= sell_value - sell_fee
-                        # buy_price <= (sell_value - sell_fee) / (buy_size * (1 + fee))
+                        # CRITICAL CHECK 1: Can market accommodate our required sell?
+                        if required_sell_price >= current_best_ask:
+                            continue  # No room in market for profit
                         
-                        total_proceeds = sell_fill.filled_value - sell_fill.fee_amount
-                        breakeven_buy_continuous = total_proceeds / (buy_size_rounded * (1 + self.EXPECTED_FEE_RATE))
+                        # CRITICAL CHECK 2: Is our pending SELL order high enough?
+                        # If our sell order is below the required price, we'd lock in a loss!
+                        if current_sell_price < required_sell_price:
+                            self._log(f"⚠️  BUY requote blocked: would need SELL @ ${required_sell_price:.{precision}f} but pending @ ${current_sell_price:.{precision}f}")
+                            continue  # Would lock in guaranteed loss
                         
-                        # DISCRETE: Round DOWN to previous tick (we can pay at most this much to not lose)
-                        breakeven_buy_ticks = math.floor(breakeven_buy_continuous / min_tick)
-                        breakeven_buy = breakeven_buy_ticks * min_tick
-                        
-                        self._log(f"🔄 30s timeout - requoting BUY at BREAK-EVEN (maker)")
-                        self._log(f"   SELL proceeds: ${total_proceeds:.6f} (value - fee)")
-                        self._log(f"   BUY size: {buy_size_rounded} (can spend up to proceeds)")
-                        self._log(f"   Continuous break-even: ${breakeven_buy_continuous:.6f}")
-                        self._log(f"   Discrete (tick-rounded DOWN): ${breakeven_buy:.{precision}f}")
-                        self._log(f"   (Original: ${original_buy_price:.{precision}f}, SELL filled @ ${sell_fill.average_price:.{precision}f})")
-                        
-                        # Cancel old buy order
+                        self._log(f"🔄 BUY undercut! Requoting: ${current_buy_price:.{precision}f} → ${new_buy_price:.{precision}f}")
                         self.client.cancel_order(buy_order_id)
-                        
-                        # Place new buy order at discrete break-even (MAKER - post_only=True)
-                        buy_order_id = self.client.place_limit_order(
-                            side="BUY",
-                            size=buy_size_rounded,
-                            price=breakeven_buy,
-                            post_only=True  # Stay maker
-                        )
+                        try:
+                            buy_order_id = self.client.place_limit_order(
+                                side="BUY", size=buy_size_rounded,
+                                price=new_buy_price, post_only=True
+                            )
+                            current_buy_price = new_buy_price
+                            buy_requotes += 1
+                            last_buy_requote = elapsed
+                        except Exception as e:
+                            self._log(f"⚠️  BUY requote failed: {e}")
+            
+            # SELL requote logic (only if SELL not filled)
+            if sell_fill is None and sell_status not in ['CANCELLED', 'EXPIRED', 'FAILED']:
+                if (current_best_ask < current_sell_price - 0.5 * min_tick and
+                    sell_requotes < MAX_REQUOTES and
+                    (elapsed - last_sell_requote) > REQUOTE_COOLDOWN):
+                    
+                    # Calculate minimum sell price based on current state
+                    if buy_fill:
+                        # BUY already filled - calculate true break-even
+                        total_cost = buy_fill.filled_value + buy_fill.fee_amount
+                        breakeven_sell = total_cost / (sell_size_rounded * (1 - fee))
+                        breakeven_ticks = math.ceil(breakeven_sell / min_tick)
+                        min_sell_price = breakeven_ticks * min_tick
+                    else:
+                        # BUY not filled yet - min sell must be profitable vs pending buy
+                        min_sell_continuous = current_buy_price * (1 + fee) / (1 - fee)
+                        min_sell_ticks = math.ceil(min_sell_continuous / min_tick)
+                        min_sell_price = min_sell_ticks * min_tick
+                    
+                    # New sell price: best_ask - 1 tick, but NEVER below min
+                    new_sell_price = max(current_best_ask - min_tick, min_sell_price)
+                    
+                    # CRITICAL: If new price equals min (break-even), log it
+                    if new_sell_price == min_sell_price and new_sell_price >= current_best_ask - min_tick:
+                        self._log(f"⚠️  SELL requote capped at break-even: ${min_sell_price:.{precision}f} (market @ ${current_best_ask:.{precision}f})")
+                    
+                    if new_sell_price < current_sell_price:
+                        self._log(f"🔄 SELL undercut! Requoting: ${current_sell_price:.{precision}f} → ${new_sell_price:.{precision}f} (min: ${min_sell_price:.{precision}f})")
+                        self.client.cancel_order(sell_order_id)
+                        try:
+                            sell_order_id = self.client.place_limit_order(
+                                side="SELL", size=sell_size_rounded,
+                                price=new_sell_price, post_only=True
+                            )
+                            current_sell_price = new_sell_price
+                            sell_requotes += 1
+                            last_sell_requote = elapsed
+                        except Exception as e:
+                            self._log(f"⚠️  SELL requote failed: {e}")
+            
+            # ONE-LEGGED BREAK-EVEN REQUOTE after 10 seconds (reduced from 30s)
+            BREAKEVEN_TIMEOUT = 10.0
+            if elapsed >= BREAKEVEN_TIMEOUT:
+                if buy_fill and not sell_fill:
+                    # BUY filled, SELL stuck - requote SELL at break-even aggressively
+                    total_cost = buy_fill.filled_value + buy_fill.fee_amount
+                    breakeven_sell_continuous = total_cost / (sell_size_rounded * (1 - fee))
+                    breakeven_sell_ticks = math.ceil(breakeven_sell_continuous / min_tick)
+                    breakeven_sell = breakeven_sell_ticks * min_tick
+                    
+                    if current_sell_price > breakeven_sell + min_tick:
+                        self._log(f"🔄 10s timeout - dropping SELL to break-even: ${breakeven_sell:.{precision}f}")
+                        self.client.cancel_order(sell_order_id)
+                        try:
+                            sell_order_id = self.client.place_limit_order(
+                                side="SELL", size=sell_size_rounded,
+                                price=breakeven_sell, post_only=True
+                            )
+                            current_sell_price = breakeven_sell
+                        except Exception as e:
+                            self._log(f"⚠️  SELL break-even requote failed: {e}")
+                
+                elif sell_fill and not buy_fill:
+                    # SELL filled, BUY stuck - requote BUY at break-even aggressively
+                    total_proceeds = sell_fill.filled_value - sell_fill.fee_amount
+                    breakeven_buy_continuous = total_proceeds / (buy_size_rounded * (1 + fee))
+                    breakeven_buy_ticks = math.floor(breakeven_buy_continuous / min_tick)
+                    breakeven_buy = breakeven_buy_ticks * min_tick
+                    
+                    if current_buy_price < breakeven_buy - min_tick:
+                        self._log(f"🔄 10s timeout - raising BUY to break-even: ${breakeven_buy:.{precision}f}")
+                        self.client.cancel_order(buy_order_id)
+                        try:
+                            buy_order_id = self.client.place_limit_order(
+                                side="BUY", size=buy_size_rounded,
+                                price=breakeven_buy, post_only=True
+                            )
+                            current_buy_price = breakeven_buy
+                        except Exception as e:
+                            self._log(f"⚠️  BUY break-even requote failed: {e}")
             
             time.sleep(self.POLL_INTERVAL)
-            elapsed += self.POLL_INTERVAL
+            elapsed += time.time() - loop_start
             
-            # Log progress every 60 seconds
-            if int(elapsed) % 60 == 0 and elapsed > 0:
-                buy_stat = "FILLED" if buy_fill else "PENDING"
-                sell_stat = "FILLED" if sell_fill else "PENDING"
-                self._log(f"⏳ Still waiting [{int(elapsed)}s]... BUY: {buy_stat}, SELL: {sell_stat}")
+            # Log progress every 30 seconds
+            if int(elapsed) % 30 == 0 and elapsed > 0 and int(elapsed) != int(elapsed - self.POLL_INTERVAL):
+                buy_stat = "FILLED" if buy_fill else f"PENDING @ ${current_buy_price:.{precision}f}"
+                sell_stat = "FILLED" if sell_fill else f"PENDING @ ${current_sell_price:.{precision}f}"
+                self._log(f"⏳ [{int(elapsed)}s] BUY: {buy_stat}, SELL: {sell_stat} (requotes: {buy_requotes}/{sell_requotes})")
         
         self._log(f"   BUY Value: ${buy_fill.filled_value:.4f}, Fee: ${buy_fill.fee_amount:.6f} ({buy_fill.fee_rate*100:.4f}%)")
         self._log(f"   SELL Value: ${sell_fill.filled_value:.4f}, Fee: ${sell_fill.fee_amount:.6f} ({sell_fill.fee_rate*100:.4f}%)")
@@ -1244,8 +1529,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    parser.add_argument("--product_id", type=str, default="WET-USD",
-                       help="Trading pair (default: WET-USD)")
+    parser.add_argument("--product_id", type=str, default="TROLL-USD",
+                       help="Trading pair (default: TROLL-USD)")
     # NOTE: BONK-USD is also excellent for market making:
     # - 8 decimal precision (ultra-fine order placement)
     # - 0.072% profit margin (~$5.3M volume) 
@@ -1311,9 +1596,10 @@ def main():
     last_spread_log = None
     
     print()
-    print("🔍 Starting continuous spread monitoring...")
+    print("🔍 Starting continuous spread monitoring with MOMENTUM SKEWING...")
     print(f"   Product: {args.product_id}")
     print(f"   Will execute trades immediately when profitable")
+    print(f"   Momentum: ↑ uptrend skews higher, ↓ downtrend skews lower")
     print(f"   Press Ctrl+C to stop")
     print()
     
@@ -1332,16 +1618,31 @@ def main():
             spread = current_ask - current_bid
             spread_pct = spread / book.mid_price
             
-            # AGGRESSIVE PRICING STRATEGY:
-            # BUY at best_bid + 1 tick (standard undercut)
-            # SELL at MINIMUM PROFITABLE PRICE (most aggressive)
-            our_buy_price = current_bid + min_tick
+            # Update momentum tracker
+            mm.momentum.update(book.mid_price)
+            skew_ticks = mm.momentum.get_skew_ticks(min_tick)
+            skew_amount = skew_ticks * min_tick
+            
+            # AGGRESSIVE PRICING STRATEGY WITH MOMENTUM SKEWING:
+            # 1. Base BUY at best_bid + 1 tick
+            # 2. Base SELL at minimum profitable price
+            # 3. Apply momentum skew to both
+            base_buy_price = current_bid + min_tick
             
             # Calculate minimum profitable sell price
             fee = mm.EXPECTED_FEE_RATE
-            min_profitable_sell_continuous = our_buy_price * (1 + fee) / (1 - fee)
+            min_profitable_sell_continuous = base_buy_price * (1 + fee) / (1 - fee)
             min_profitable_sell_ticks = math.ceil(min_profitable_sell_continuous / min_tick)
-            our_sell_price = min_profitable_sell_ticks * min_tick
+            base_sell_price = min_profitable_sell_ticks * min_tick
+            
+            # Apply momentum skew
+            our_buy_price = base_buy_price + skew_amount
+            our_sell_price = base_sell_price + skew_amount
+            
+            # Safety: Ensure buy price stays above current bid
+            if our_buy_price <= current_bid:
+                our_buy_price = current_bid + min_tick
+                our_sell_price = base_sell_price
             
             # Must be below best_ask to be competitive
             if our_sell_price >= current_ask:
@@ -1368,16 +1669,17 @@ def main():
             net_profit = gross_profit - total_fees
             net_profit_pct = net_profit / actual_buy_value
             
-            # Log spread changes
+            # Log spread changes (with momentum)
             if last_spread_log is None or abs(spread_pct - last_spread_log) > 0.002:
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 status = "🟢 EXECUTING" if net_profit > 0 and net_profit_pct >= mm.MIN_PROFIT_RATE else "🔴 Monitoring"
-                print(f"[{timestamp}] {status} | Spread: {spread_pct*100:.4f}% → Profit: {net_profit_pct*100:+.4f}%")
+                skew_dir = "↑" if skew_ticks > 0 else "↓" if skew_ticks < 0 else "→"
+                print(f"[{timestamp}] {status} | Spread: {spread_pct*100:.4f}% → Profit: {net_profit_pct*100:+.4f}% | Mom: {skew_dir}{abs(skew_ticks)}t")
                 last_spread_log = spread_pct
             
             # Execute trade if profitable
             if net_profit > 0 and net_profit_pct >= mm.MIN_PROFIT_RATE:
-                print(f"\n⚡ PROFITABLE OPPORTUNITY - EXECUTING IMMEDIATELY!")
+                print(f"\n⚡ PROFITABLE OPPORTUNITY - EXECUTING IMMEDIATELY! (Skew: {skew_ticks:+d}t)")
                 
                 try:
                     # Execute the trade round (but bypass the monitoring since we just found opportunity)

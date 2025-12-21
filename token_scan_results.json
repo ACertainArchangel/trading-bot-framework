@@ -1,0 +1,35 @@
+{
+  "scan_time": "2025-12-20T11:22:06.134351",
+  "parameters": {
+    "min_spread_pct": 0.0006,
+    "min_volume_24h": 50000,
+    "activity_monitor_seconds": 10,
+    "fee_rate": 0.00025
+  },
+  "candidates": [
+    {
+      "product_id": "BNKR-USD",
+      "mid_price": 0.00016905000000000002,
+      "our_buy_price": 0.0001685,
+      "our_sell_price": 0.0001696,
+      "profit_margin_pct": 0.006006950606329485,
+      "volume_24h": 1387412027.0,
+      "buy_activity": 1,
+      "sell_activity": 2,
+      "base_increment": "1",
+      "tick_size": 1e-07
+    },
+    {
+      "product_id": "DOGINME-USD",
+      "mid_price": 0.00018155,
+      "our_buy_price": 0.000181,
+      "our_sell_price": 0.0001821,
+      "profit_margin_pct": 0.005558936931974661,
+      "volume_24h": 556227624.0,
+      "buy_activity": 1,
+      "sell_activity": 1,
+      "base_increment": "1",
+      "tick_size": 1e-07
+    }
+  ]
+}

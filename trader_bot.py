@@ -67,6 +67,32 @@ class Bot:
         self.asset = float(interface.asset)
         self.position = interface.position
         
+        # Apply dust threshold - tiny amounts are treated as zero
+        DUST_THRESHOLD_USD = 0.10  # $0.10
+        DUST_THRESHOLD_ASSET = 0.01
+        
+        currency_is_dust = self.currency < DUST_THRESHOLD_USD
+        asset_is_dust = self.asset < DUST_THRESHOLD_ASSET
+        
+        # If both are dust, pick the relatively larger one
+        if currency_is_dust and asset_is_dust:
+            if self.currency > 0 or self.asset > 0:
+                currency_ratio = self.currency / DUST_THRESHOLD_USD
+                asset_ratio = self.asset / DUST_THRESHOLD_ASSET
+                self._log(f"⚠️  Both balances are dust: ${self.currency:.6f} USD, {self.asset:.8f} asset")
+                if currency_ratio >= asset_ratio:
+                    self.asset = 0.0  # Treat as SHORT
+                    self.position = "short"
+                    self._log(f"    Treating as SHORT (USD holder)")
+                else:
+                    self.currency = 0.0  # Treat as LONG
+                    self.position = "long"
+                    self._log(f"    Treating as LONG (asset holder)")
+        elif currency_is_dust and not asset_is_dust:
+            self.currency = 0.0  # Ignore dust USD
+        elif asset_is_dust and not currency_is_dust:
+            self.asset = 0.0  # Ignore dust asset
+        
         # Verify position matches balances
         if self.asset > 0 and self.currency > 0:
             raise ValueError(
