@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggressive Trader Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            grid-template-rows: auto 1fr 200px;
+            gap: 12px;
+            padding: 12px;
+            height: 100vh;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .header-stat {
+            text-align: center;
+        }
+
+        .header-stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+
+        .header-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .sidebar {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .panel h3 {
+            font-size: 14px;
+            color: #dc2626;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        /* Position Card */
+        .position-card {
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid #dc2626;
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .position-side {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .position-side.long {
+            color: #22c55e;
+        }
+
+        .position-side.short {
+            color: #ef4444;
+        }
+
+        .position-size {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .price-levels {
+            display: grid;
+            gap: 8px;
+        }
+
+        .price-level {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .price-level.entry {
+            background: rgba(59, 130, 246, 0.2);
+            border-left: 3px solid #3b82f6;
+        }
+
+        .price-level.stop-loss {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+        }
+
+        .price-level.take-profit {
+            background: rgba(34, 197, 94, 0.2);
+            border-left: 3px solid #22c55e;
+        }
+
+        .price-label {
+            font-weight: 500;
+        }
+
+        .price-value {
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 12px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .stat-value.positive {
+            color: #22c55e;
+        }
+
+        .stat-value.negative {
+            color: #ef4444;
+        }
+
+        /* Chart */
+        .chart-container {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+        }
+
+        #chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Logs */
+        .log-container {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .log-window {
+            background: #1a1f3a;
+            border-radius: 10px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .log-window h3 {
+            font-size: 14px;
+            color: #dc2626;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .log-entry {
+            font-family: monospace;
+            font-size: 11px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .log-time {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        /* No Position State */
+        .no-position {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .no-position-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        /* Order Book */
+        .order-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-size: 11px;
+        }
+
+        .order-item.buy {
+            border-left: 3px solid #22c55e;
+        }
+
+        .order-item.sell {
+            border-left: 3px solid #ef4444;
+        }
+
+        /* Trade History */
+        .trade-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .trade-item.buy {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+        }
+
+        .trade-item.sell {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Aggressive Trader</h1>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-label">Current Price</div>
+                    <div class="header-stat-value" id="current-price">$0.00</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-label">Portfolio</div>
+                    <div class="header-stat-value" id="portfolio-value">$0.00</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-label">P&L</div>
+                    <div class="header-stat-value" id="pnl-value">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Position Panel -->
+            <div class="panel">
+                <h3>📊 Position</h3>
+                <div id="position-container">
+                    <div class="no-position">
+                        <div class="no-position-icon">📭</div>
+                        <div>No active position</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Panel -->
+            <div class="panel">
+                <h3>💰 Account</h3>
+                <div class="stat-row">
+                    <span class="stat-label">USD Balance</span>
+                    <span class="stat-value" id="usd-balance">$0.00</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">BTC Balance</span>
+                    <span class="stat-value" id="btc-balance">0.00000000</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Trades</span>
+                    <span class="stat-value" id="trade-count">0</span>
+                </div>
+            </div>
+
+            <!-- Open Orders Panel -->
+            <div class="panel">
+                <h3>📝 Open Orders</h3>
+                <div id="orders-container">
+                    <div class="no-position">No open orders</div>
+                </div>
+            </div>
+
+            <!-- Trade History -->
+            <div class="panel">
+                <h3>📜 Recent Trades</h3>
+                <div id="trades-container" style="max-height: 150px; overflow-y: auto;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container">
+            <div id="chart"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="log-container">
+            <div class="log-window">
+                <h3>📋 Bot Log</h3>
+                <div id="main-log"></div>
+            </div>
+            <div class="log-window">
+                <h3>📡 Stream Log</h3>
+                <div id="stream-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Socket.IO connection
+        const socket = io();
+        
+        // Chart state
+        let chart = null;
+        let candleData = [];
+        let priceLines = [];
+        let tradeMarkers = [];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initChart();
+            await loadInitialData();
+            setupSocketListeners();
+            
+            // Periodic updates
+            setInterval(updatePriceLines, 2000);
+            setInterval(updatePosition, 1000);
+            setInterval(updateOrders, 2000);
+            setInterval(updateTrades, 5000);
+        });
+        
+        async function initChart() {
+            const layout = {
+                paper_bgcolor: '#1a1f3a',
+                plot_bgcolor: '#1a1f3a',
+                font: { color: '#e0e0e0' },
+                margin: { t: 30, r: 60, b: 50, l: 60 },
+                xaxis: {
+                    type: 'date',
+                    gridcolor: '#2a2f4a',
+                    rangeslider: { visible: false }
+                },
+                yaxis: {
+                    gridcolor: '#2a2f4a',
+                    side: 'right'
+                },
+                showlegend: false,
+                hovermode: 'x unified'
+            };
+            
+            chart = await Plotly.newPlot('chart', [], layout, {
+                responsive: true,
+                displayModeBar: false
+            });
+        }
+        
+        async function loadInitialData() {
+            try {
+                // Load candles
+                const candleRes = await fetch('/api/candles');
+                candleData = await candleRes.json();
+                updateChart();
+                
+                // Load position
+                await updatePosition();
+                
+                // Load logs
+                const logRes = await fetch('/api/logs');
+                const logs = await logRes.json();
+                logs.main.forEach(log => addMainLog(log));
+                logs.stream.forEach(log => addStreamLog(log));
+                
+            } catch (err) {
+                console.error('Failed to load initial data:', err);
+            }
+        }
+        
+        function setupSocketListeners() {
+            socket.on('new_candle', (candle) => {
+                candleData.push(candle);
+                // Keep last 500 candles
+                if (candleData.length > 500) {
+                    candleData = candleData.slice(-500);
+                }
+                updateChart();
+            });
+            
+            socket.on('position_update', (state) => {
+                updatePositionUI(state);
+            });
+            
+            socket.on('main_log', (log) => {
+                addMainLog(log);
+            });
+            
+            socket.on('stream_log', (log) => {
+                addStreamLog(log);
+            });
+        }
+        
+        function updateChart() {
+            if (candleData.length === 0) return;
+            
+            const times = candleData.map(c => new Date(c.time));
+            const opens = candleData.map(c => c.open);
+            const highs = candleData.map(c => c.high);
+            const lows = candleData.map(c => c.low);
+            const closes = candleData.map(c => c.close);
+            
+            const traces = [{
+                x: times,
+                open: opens,
+                high: highs,
+                low: lows,
+                close: closes,
+                type: 'candlestick',
+                increasing: { line: { color: '#22c55e' } },
+                decreasing: { line: { color: '#ef4444' } },
+                name: 'Price'
+            }];
+            
+            // Add price lines for SL/TP
+            priceLines.forEach(line => {
+                traces.push({
+                    x: [times[0], times[times.length - 1]],
+                    y: [line.price, line.price],
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: {
+                        color: line.color,
+                        width: 2,
+                        dash: line.style === 'dashed' ? 'dash' : 'solid'
+                    },
+                    name: line.label,
+                    hoverinfo: 'y+name'
+                });
+            });
+            
+            // Add trade markers
+            if (tradeMarkers.length > 0) {
+                const buyMarkers = tradeMarkers.filter(t => t.side === 'BUY');
+                const sellMarkers = tradeMarkers.filter(t => t.side === 'SELL');
+                
+                if (buyMarkers.length > 0) {
+                    traces.push({
+                        x: buyMarkers.map(t => new Date(t.timestamp)),
+                        y: buyMarkers.map(t => t.price),
+                        type: 'scatter',
+                        mode: 'markers',
+                        marker: { color: '#22c55e', size: 12, symbol: 'triangle-up' },
+                        name: 'Buy'
+                    });
+                }
+                
+                if (sellMarkers.length > 0) {
+                    traces.push({
+                        x: sellMarkers.map(t => new Date(t.timestamp)),
+                        y: sellMarkers.map(t => t.price),
+                        type: 'scatter',
+                        mode: 'markers',
+                        marker: { color: '#ef4444', size: 12, symbol: 'triangle-down' },
+                        name: 'Sell'
+                    });
+                }
+            }
+            
+            Plotly.react('chart', traces, chart.layout);
+            
+            // Update current price display
+            const lastPrice = closes[closes.length - 1];
+            document.getElementById('current-price').textContent = `$${lastPrice.toFixed(2)}`;
+        }
+        
+        async function updatePriceLines() {
+            try {
+                const res = await fetch('/api/price_lines');
+                priceLines = await res.json();
+                updateChart();
+            } catch (err) {
+                console.error('Failed to update price lines:', err);
+            }
+        }
+        
+        async function updatePosition() {
+            try {
+                const res = await fetch('/api/position');
+                const state = await res.json();
+                updatePositionUI(state);
+            } catch (err) {
+                console.error('Failed to update position:', err);
+            }
+        }
+        
+        function updatePositionUI(state) {
+            const container = document.getElementById('position-container');
+            
+            // Update header stats
+            document.getElementById('portfolio-value').textContent = `$${state.portfolio_value.toFixed(2)}`;
+            document.getElementById('usd-balance').textContent = `$${state.currency.toFixed(2)}`;
+            document.getElementById('btc-balance').textContent = state.asset.toFixed(8);
+            
+            // Calculate P&L (assume $1000 starting)
+            const startValue = 1000;
+            const pnl = state.portfolio_value - startValue;
+            const pnlEl = document.getElementById('pnl-value');
+            pnlEl.textContent = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+            pnlEl.className = `header-stat-value ${pnl >= 0 ? 'positive' : 'negative'}`;
+            
+            if (!state.has_position || state.positions.length === 0) {
+                container.innerHTML = `
+                    <div class="no-position">
+                        <div class="no-position-icon">📭</div>
+                        <div>No active position</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            state.positions.forEach((pos, i) => {
+                const sideClass = pos.side === 'LONG' ? 'long' : 'short';
+                const currentPrice = state.current_price;
+                
+                // Calculate unrealized P&L
+                let unrealizedPnl = 0;
+                if (pos.side === 'LONG') {
+                    unrealizedPnl = (currentPrice - pos.entry_price) * pos.size;
+                } else {
+                    unrealizedPnl = (pos.entry_price - currentPrice) * pos.size;
+                }
+                
+                html += `
+                    <div class="position-card">
+                        <div class="position-header">
+                            <span class="position-side ${sideClass}">${pos.side}</span>
+                            <span class="position-size">${pos.size.toFixed(6)} BTC</span>
+                        </div>
+                        <div class="price-levels">
+                            <div class="price-level take-profit">
+                                <span class="price-label">Take Profit</span>
+                                <span class="price-value">$${pos.take_profit ? pos.take_profit.toFixed(2) : 'N/A'}</span>
+                            </div>
+                            <div class="price-level entry">
+                                <span class="price-label">Entry${pos.trailing_stop ? ' (Trailing)' : ''}</span>
+                                <span class="price-value">$${pos.entry_price.toFixed(2)}</span>
+                            </div>
+                            <div class="price-level stop-loss">
+                                <span class="price-label">Stop Loss</span>
+                                <span class="price-value">$${pos.stop_loss ? pos.stop_loss.toFixed(2) : 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div class="stat-row" style="margin-top: 10px;">
+                            <span class="stat-label">Unrealized P&L</span>
+                            <span class="stat-value ${unrealizedPnl >= 0 ? 'positive' : 'negative'}">
+                                ${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        async function updateOrders() {
+            try {
+                const res = await fetch('/api/orders');
+                const orders = await res.json();
+                
+                const container = document.getElementById('orders-container');
+                
+                if (orders.length === 0) {
+                    container.innerHTML = '<div class="no-position">No open orders</div>';
+                    return;
+                }
+                
+                let html = '';
+                orders.forEach(order => {
+                    const sideClass = order.side === 'BUY' ? 'buy' : 'sell';
+                    html += `
+                        <div class="order-item ${sideClass}">
+                            <strong>${order.side}</strong> ${order.size.toFixed(6)} @ 
+                            ${order.order_type === 'STOP' ? `Stop $${order.stop_price?.toFixed(2)}` : `$${order.price?.toFixed(2) || 'Market'}`}
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (err) {
+                console.error('Failed to update orders:', err);
+            }
+        }
+        
+        async function updateTrades() {
+            try {
+                const res = await fetch('/api/trades');
+                const trades = await res.json();
+                
+                tradeMarkers = trades;
+                
+                const container = document.getElementById('trades-container');
+                document.getElementById('trade-count').textContent = trades.length;
+                
+                if (trades.length === 0) {
+                    container.innerHTML = '<div class="no-position">No trades yet</div>';
+                    return;
+                }
+                
+                // Show last 10 trades
+                const recentTrades = trades.slice(-10).reverse();
+                let html = '';
+                recentTrades.forEach(trade => {
+                    const sideClass = trade.side === 'BUY' ? 'buy' : 'sell';
+                    const time = new Date(trade.timestamp).toLocaleTimeString();
+                    html += `
+                        <div class="trade-item ${sideClass}">
+                            <span>${trade.side} ${trade.size.toFixed(6)}</span>
+                            <span>$${trade.price.toFixed(2)}</span>
+                            <span style="color: #666;">${time}</span>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                updateChart(); // Update trade markers on chart
+            } catch (err) {
+                console.error('Failed to update trades:', err);
+            }
+        }
+        
+        function addMainLog(log) {
+            const container = document.getElementById('main-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            // Keep last 100 entries
+            while (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        function addStreamLog(log) {
+            const container = document.getElementById('stream-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            while (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-from ..position import PositionSide
+# Import from parent - handle both package and direct imports
+try:
+    from ..position import PositionSide
+except ImportError:
+    from position import PositionSide
 
 
 class SignalStrength(Enum):
