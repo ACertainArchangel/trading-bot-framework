@@ -111,6 +111,9 @@ class PaperTradingInterface:
         # Current market price (updated externally)
         self._current_price: float = 0.0
         
+        # Current candle timestamp (for backtest trade markers)
+        self._current_candle_time: float = 0.0
+        
         # Trade history for dashboard
         self.trade_history: List[dict] = []
     
@@ -128,6 +131,10 @@ class PaperTradingInterface:
     def current_price(self) -> float:
         """Current market price."""
         return self._current_price
+    
+    def set_candle_time(self, timestamp_ms: float):
+        """Set current candle timestamp (for backtest trade markers)."""
+        self._current_candle_time = timestamp_ms
     
     def update_price(self, price: float) -> List[SimulatedOrder]:
         """
@@ -239,9 +246,10 @@ class PaperTradingInterface:
             del self.orders[order.order_id]
         self.filled_orders.append(order)
         
-        # Record trade
+        # Record trade - use candle time if available (backtest), else use wall clock
+        trade_timestamp = self._current_candle_time if self._current_candle_time > 0 else (order.filled_at.timestamp() * 1000)
         self.trade_history.append({
-            'timestamp': order.filled_at.timestamp() * 1000,
+            'timestamp': trade_timestamp,
             'side': order.side.value,
             'price': fill_price,
             'size': order.size,

@@ -138,9 +138,14 @@ def index():
 def get_candles():
     """Get all current candle data."""
     if ticker_stream is None:
-        return jsonify({"error": "Stream not initialized"}), 503
+        print("DEBUG: ticker_stream is None")
+        return jsonify([])  # Return empty array instead of error
     
     candles = ticker_stream.get_candles()
+    print(f"DEBUG: get_candles() returned {len(candles) if candles else 0} candles")
+    
+    if not candles:
+        return jsonify([])
     
     formatted = [
         {

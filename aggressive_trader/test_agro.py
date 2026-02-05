@@ -20,6 +20,7 @@ from interfaces.paper_trading import PaperTradingInterface, OrderSide
 from strategies.base import MomentumStrategy, BreakoutStrategy, EntrySignal, Candle
 from strategies.macd import MACDStrategy, MACDHistogramStrategy
 from strategies.mean_reversion import MeanReversionStrategy, RSIMeanReversionStrategy
+from strategies.super_strat import SuperStrat
 from position import PositionSide
 import web_dashboard
 
@@ -127,8 +128,12 @@ class SimpleAggressiveBot:
             return [self.position]
         return []
     
-    def process_tick(self, candles: list, current_price: float):
+    def process_tick(self, candles: list, current_price: float, candle_time_ms: float = 0):
         """Process a price tick."""
+        # Set candle timestamp for accurate trade markers
+        if candle_time_ms > 0:
+            self.interface.set_candle_time(candle_time_ms)
+        
         filled = self.interface.update_price(current_price)
         
         if self.position:
@@ -179,6 +184,7 @@ class SimpleAggressiveBot:
         
         if order.status.value == "FILLED":
             entry_price = order.filled_price
+            # signal.stop_loss_pct and take_profit_pct are already decimals (0.06 = 6%)
             sl_price = entry_price * (1 - signal.stop_loss_pct)
             tp_price = entry_price * (1 + signal.take_profit_pct)
             
@@ -250,7 +256,7 @@ class SimpleAggressiveBot:
 def main():
     parser = argparse.ArgumentParser(description='Aggressive Trader Backtest')
     parser.add_argument('--strategy', type=str, default='momentum', 
-                        choices=['momentum', 'breakout', 'macd', 'macd-histogram', 'mean-reversion', 'rsi-reversion'],
+                        choices=['momentum', 'breakout', 'macd', 'macd-histogram', 'mean-reversion', 'rsi-reversion', 'super'],
                         help='Strategy to use')
     parser.add_argument('--hours', type=int, default=24,
                         help='Hours of historical data to backtest')
@@ -258,13 +264,9 @@ def main():
                         help='Starting USD balance')
     parser.add_argument('--port', type=int, default=5005,
                         help='Dashboard port')
-    parser.add_argument('--sl_pct', type=float, default=1.0,
-                        help='Stop loss percentage')
-    parser.add_argument('--tp_pct', type=float, default=2.0,
-                        help='Take profit percentage')
     parser.add_argument('--trailing', action='store_true',
                         help='Use trailing stop')
-    parser.add_argument('--speed', type=float, default=0.05,
+    parser.add_argument('--speed', type=float, default=0.005,
                         help='Playback speed (seconds per candle)')
     parser.add_argument('--lookback', type=int, default=20,
                         help='Strategy lookback period')
@@ -279,8 +281,6 @@ def main():
     print(f"Strategy: {args.strategy}")
     print(f"Period: Last {args.hours} hours")
     print(f"Starting Capital: ${args.starting_currency:.2f}")
-    print(f"Stop Loss: {args.sl_pct}%")
-    print(f"Take Profit: {args.tp_pct}%")
     print(f"Trailing Stop: {args.trailing}")
     print(f"Playback Speed: {args.speed}s per candle")
     print(f"Dashboard: http://localhost:{args.port}")
@@ -325,19 +325,25 @@ def main():
             atr_period=14,
             atr_sl_multiplier=2.0
         )
+    elif args.strategy == 'super':
+        strategy = SuperStrat(
+            # Use class defaults for all parameters
+            volume_spike_threshold=2.0,
+            volume_lookback=20,
+            sr_lookback=50
+            # sl_scale and tp_scale will use DEFAULT_SL_SCALE and DEFAULT_TP_SCALE
+        )
+        print(f"📊 SuperStrat config: SL={strategy.DEFAULT_STOP_LOSS_PCT*strategy.sl_scale:.3%}, TP={strategy.DEFAULT_TAKE_PROFIT_PCT*strategy.tp_scale:.3%}")
     else:
         strategy = MomentumStrategy(lookback=args.lookback, threshold_pct=args.threshold / 100)
     
-    # For mean reversion strategies, SL/TP are dynamic so we don't override
-    if args.strategy not in ['mean-reversion', 'rsi-reversion']:
-        strategy.default_stop_loss_pct = args.sl_pct / 100
-        strategy.default_take_profit_pct = args.tp_pct / 100
+    # Only set trailing stop - SL/TP come from strategy defaults
     strategy.use_trailing_stop = args.trailing
     
     # Create interface
     interface = PaperTradingInterface(
         initial_currency=args.starting_currency,
-        fee_rate=0.0025,
+        fee_rate=0.00025,  # Coinbase VIP4 fee (0.025%)
         logger=web_dashboard.main_logger
     )
     
@@ -374,9 +380,11 @@ def main():
         while stream.advance():
             current_candles = stream.get_candles()
             if current_candles:
-                current_price = current_candles[-1][4]
+                current_candle = current_candles[-1]
+                current_price = current_candle[4]  # Close price
+                candle_time_ms = current_candle[0] * 1000  # Timestamp in ms
                 interface.update_price(current_price)
-                bot.process_tick(current_candles, current_price)
+                bot.process_tick(current_candles, current_price, candle_time_ms)
             
             # Update dashboard
             web_dashboard.emit_position_update()

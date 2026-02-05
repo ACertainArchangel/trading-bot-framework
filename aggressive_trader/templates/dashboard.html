@@ -408,14 +408,18 @@
                 xaxis: {
                     type: 'date',
                     gridcolor: '#2a2f4a',
-                    rangeslider: { visible: false }
+                    rangeslider: { visible: false },
+                    autorange: true
                 },
                 yaxis: {
                     gridcolor: '#2a2f4a',
-                    side: 'right'
+                    side: 'right',
+                    autorange: true,
+                    fixedrange: false
                 },
                 showlegend: false,
-                hovermode: 'x unified'
+                hovermode: 'x unified',
+                uirevision: 'constant'  // Preserve zoom/pan state across updates
             };
             
             chart = await Plotly.newPlot('chart', [], layout, {
@@ -516,9 +520,18 @@
                         x: buyMarkers.map(t => new Date(t.timestamp)),
                         y: buyMarkers.map(t => t.price),
                         type: 'scatter',
-                        mode: 'markers',
-                        marker: { color: '#22c55e', size: 12, symbol: 'triangle-up' },
-                        name: 'Buy'
+                        mode: 'markers+text',
+                        marker: { 
+                            color: '#22c55e', 
+                            size: 16, 
+                            symbol: 'triangle-up',
+                            line: { color: '#ffffff', width: 2 }
+                        },
+                        text: buyMarkers.map(t => 'BUY'),
+                        textposition: 'bottom center',
+                        textfont: { color: '#22c55e', size: 10 },
+                        name: 'Buy',
+                        hovertemplate: 'BUY @ $%{y:.2f}<br>%{x}<extra></extra>'
                     });
                 }
                 
@@ -527,14 +540,29 @@
                         x: sellMarkers.map(t => new Date(t.timestamp)),
                         y: sellMarkers.map(t => t.price),
                         type: 'scatter',
-                        mode: 'markers',
-                        marker: { color: '#ef4444', size: 12, symbol: 'triangle-down' },
-                        name: 'Sell'
+                        mode: 'markers+text',
+                        marker: { 
+                            color: '#ef4444', 
+                            size: 16, 
+                            symbol: 'triangle-down',
+                            line: { color: '#ffffff', width: 2 }
+                        },
+                        text: sellMarkers.map(t => 'SELL'),
+                        textposition: 'top center',
+                        textfont: { color: '#ef4444', size: 10 },
+                        name: 'Sell',
+                        hovertemplate: 'SELL @ $%{y:.2f}<br>%{x}<extra></extra>'
                     });
                 }
             }
             
-            Plotly.react('chart', traces, chart.layout);
+            // Preserve existing layout settings (zoom/pan) while updating data
+            const updateLayout = {
+                ...chart.layout,
+                uirevision: 'constant'
+            };
+            
+            Plotly.react('chart', traces, updateLayout);
             
             // Update current price display
             const lastPrice = closes[closes.length - 1];
