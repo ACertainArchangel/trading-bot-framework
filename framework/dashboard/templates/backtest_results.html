@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest Results - Trading Framework</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header .subtitle { opacity: 0.9; font-size: 14px; }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .metric-card.highlight {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+        }
+        
+        .metric-card.highlight.negative {
+            background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        
+        .metric-value.up { color: #22c55e; }
+        .metric-value.down { color: #ef4444; }
+        
+        .chart-container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #price-chart { height: 400px; }
+        #equity-chart { height: 250px; }
+        
+        .trade-log {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .trade-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .trade-table th {
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .trade-table td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            font-family: 'SF Mono', monospace;
+        }
+        
+        .trade-table tr:hover { background: #334155; }
+        
+        .trade-buy { color: #22c55e; }
+        .trade-sell { color: #ef4444; }
+        
+        .two-col {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>📊 Backtest Results</h1>
+                <div class="subtitle" id="strategy-name">Loading...</div>
+            </div>
+            <div id="period"></div>
+        </header>
+        
+        <div class="metrics-grid">
+            <div class="metric-card highlight" id="return-card">
+                <div class="metric-label">Total Return</div>
+                <div class="metric-value" id="total-return">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">APY</div>
+                <div class="metric-value" id="apy">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value" id="win-rate">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value" id="total-trades">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Max Drawdown</div>
+                <div class="metric-value down" id="max-drawdown">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Final Value</div>
+                <div class="metric-value" id="final-value">--</div>
+            </div>
+        </div>
+        
+        <div class="two-col">
+            <div class="chart-container">
+                <div class="chart-title">📈 Price Chart with Trades</div>
+                <div id="price-chart"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">💰 Equity Curve</div>
+                <div id="equity-chart"></div>
+            </div>
+        </div>
+        
+        <div class="trade-log">
+            <div class="chart-title">📋 Trade Log</div>
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                        <th>Amount</th>
+                        <th>Fee</th>
+                    </tr>
+                </thead>
+                <tbody id="trade-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const layout = {
+            paper_bgcolor: '#1e293b',
+            plot_bgcolor: '#1e293b',
+            font: { color: '#e2e8f0', family: 'system-ui' },
+            margin: { l: 60, r: 20, t: 20, b: 40 },
+            autosize: true,
+            xaxis: {
+                type: 'date',
+                gridcolor: '#334155',
+                linecolor: '#334155',
+                autorange: true
+            },
+            yaxis: {
+                gridcolor: '#334155',
+                linecolor: '#334155',
+                side: 'right',
+                autorange: true,
+                fixedrange: false
+            },
+            showlegend: false
+        };
+        
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            displaylogo: false
+        };
+        
+        // Load all data
+        Promise.all([
+            fetch('/api/results').then(r => r.json()),
+            fetch('/api/candles').then(r => r.json()),
+            fetch('/api/trades').then(r => r.json()),
+            fetch('/api/equity').then(r => r.json())
+        ]).then(([results, candles, trades, equity]) => {
+            // Update metrics
+            document.getElementById('strategy-name').textContent = results.strategy_name;
+            document.getElementById('period').textContent = `${results.start_date} → ${results.end_date}`;
+            
+            const returnEl = document.getElementById('total-return');
+            returnEl.textContent = `${results.total_return_pct >= 0 ? '+' : ''}${results.total_return_pct.toFixed(2)}%`;
+            returnEl.className = 'metric-value ' + (results.total_return_pct >= 0 ? 'up' : 'down');
+            
+            const returnCard = document.getElementById('return-card');
+            if (results.total_return_pct < 0) returnCard.classList.add('negative');
+            
+            const apyEl = document.getElementById('apy');
+            apyEl.textContent = `${results.annualized_return_pct >= 0 ? '+' : ''}${results.annualized_return_pct.toFixed(2)}%`;
+            apyEl.className = 'metric-value ' + (results.annualized_return_pct >= 0 ? 'up' : 'down');
+            
+            document.getElementById('win-rate').textContent = `${results.win_rate_pct.toFixed(1)}%`;
+            document.getElementById('total-trades').textContent = results.total_trades;
+            document.getElementById('max-drawdown').textContent = `-${results.max_drawdown_pct.toFixed(2)}%`;
+            document.getElementById('final-value').textContent = `$${results.ending_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Price chart with trade markers
+            const times = candles.map(c => new Date(c.time));
+            const priceTrace = {
+                type: 'candlestick',
+                x: times,
+                open: candles.map(c => c.open),
+                high: candles.map(c => c.high),
+                low: candles.map(c => c.low),
+                close: candles.map(c => c.close),
+                increasing: { line: { color: '#22c55e' } },
+                decreasing: { line: { color: '#ef4444' } }
+            };
+            
+            // Add trade markers
+            const buyTrades = trades.filter(t => t.type === 'buy');
+            const sellTrades = trades.filter(t => t.type === 'sell');
+            
+            const buyMarkers = {
+                type: 'scatter',
+                mode: 'markers',
+                x: buyTrades.map(t => new Date(t.timestamp * 1000)),
+                y: buyTrades.map(t => t.price),
+                marker: { color: '#22c55e', size: 12, symbol: 'triangle-up' },
+                name: 'Buy'
+            };
+            
+            const sellMarkers = {
+                type: 'scatter',
+                mode: 'markers',
+                x: sellTrades.map(t => new Date(t.timestamp * 1000)),
+                y: sellTrades.map(t => t.price),
+                marker: { color: '#ef4444', size: 12, symbol: 'triangle-down' },
+                name: 'Sell'
+            };
+            
+            Plotly.newPlot('price-chart', [priceTrace, buyMarkers, sellMarkers], layout, config);
+            
+            // Equity curve
+            if (equity.times.length > 0) {
+                const equityTrace = {
+                    type: 'scatter',
+                    mode: 'lines',
+                    x: equity.times.map(t => new Date(t)),
+                    y: equity.values,
+                    fill: 'tozeroy',
+                    line: { color: '#8b5cf6', width: 2 },
+                    fillcolor: 'rgba(139, 92, 246, 0.2)'
+                };
+                
+                const equityLayout = {...layout, yaxis: {...layout.yaxis, tickprefix: '$'}};
+                Plotly.newPlot('equity-chart', [equityTrace], equityLayout, config);
+            }
+            
+            // Trade log
+            const tbody = document.getElementById('trade-tbody');
+            trades.forEach((trade, i) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td class="trade-${trade.type}">${trade.type.toUpperCase()}</td>
+                    <td>$${trade.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>${trade.amount.toFixed(6)}</td>
+                    <td>$${trade.fee.toFixed(4)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        });
+    </script>
+</body>
+</html>

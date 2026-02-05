@@ -13,6 +13,7 @@ secrets.json
 secrets/
 *.key
 *.secret
+the_recepie_for_my_special_soup.txt
 
 # IDEs
 .vscode/

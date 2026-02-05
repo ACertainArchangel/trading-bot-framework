@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Trading - Trading Framework</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-template-rows: 70px 1fr 200px;
+            gap: 12px;
+            padding: 12px;
+            height: 100vh;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            padding: 16px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header.paper {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        
+        .header.live {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        
+        .header h1 { font-size: 22px; font-weight: 600; }
+        .header .mode-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.stopped { background: #ef4444; animation: none; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .sidebar {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            font-size: 13px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+        
+        .stat {
+            background: #334155;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        
+        .stat-value.up { color: #22c55e; }
+        .stat-value.down { color: #ef4444; }
+        
+        .position-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .position-badge.long { background: #166534; color: #86efac; }
+        .position-badge.short { background: #7f1d1d; color: #fca5a5; }
+        
+        .chart-area {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 12px;
+            position: relative;
+        }
+        
+        #chart { width: 100%; height: 100%; }
+        
+        .bottom-panel {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .panel {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel h2 {
+            font-size: 13px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            background: #0f172a;
+        }
+        
+        .log-time { color: #64748b; margin-right: 8px; }
+        .log-buy { color: #22c55e; }
+        .log-sell { color: #ef4444; }
+        
+        .trade-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .trade-item:last-child { border-bottom: none; }
+        
+        .trade-type {
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .trade-type.buy { background: #166534; color: #86efac; }
+        .trade-type.sell { background: #7f1d1d; color: #fca5a5; }
+        
+        .indicators {
+            margin-top: 16px;
+        }
+        
+        .indicator-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #334155;
+            cursor: pointer;
+            font-size: 13px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        
+        .indicator-toggle:hover { background: #334155; }
+        
+        .indicator-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8b5cf6;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header" id="header">
+            <div>
+                <h1>📈 <span id="strategy-name">Loading...</span></h1>
+                <span class="mode-badge" id="mode-badge">PAPER</span>
+            </div>
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Running</span>
+                </div>
+                <div class="status-item">
+                    <span id="product">BTC-USD</span>
+                </div>
+                <div class="status-item">
+                    <span id="candle-count">0 candles</span>
+                </div>
+            </div>
+        </header>
+        
+        <aside class="sidebar">
+            <h2>Portfolio</h2>
+            <div class="stat">
+                <div class="stat-label">Current Value</div>
+                <div class="stat-value" id="current-value">$0.00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Profit / Loss</div>
+                <div class="stat-value" id="profit">+0.00%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Position</div>
+                <div class="position-badge short" id="position">SHORT</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="trade-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Fees Paid</div>
+                <div class="stat-value" id="fees-paid" style="color: #ef4444;">$0.00</div>
+            </div>
+            
+            <h2 style="margin-top: 20px;">Market</h2>
+            <div class="stat">
+                <div class="stat-label">Current Price</div>
+                <div class="stat-value" id="price">$0.00</div>
+            </div>
+            
+            <div class="indicators">
+                <h2>Indicators</h2>
+                <label class="indicator-toggle">
+                    <span>EMA 9</span>
+                    <input type="checkbox" id="chk_ema_9" checked onchange="toggleIndicator('ema_9', this.checked)">
+                </label>
+                <label class="indicator-toggle">
+                    <span>EMA 20</span>
+                    <input type="checkbox" id="chk_ema_20" checked onchange="toggleIndicator('ema_20', this.checked)">
+                </label>
+                <label class="indicator-toggle">
+                    <span>Bollinger Bands</span>
+                    <input type="checkbox" id="chk_bb" onchange="toggleIndicator('bb', this.checked)">
+                </label>
+                <label class="indicator-toggle">
+                    <span>RSI</span>
+                    <input type="checkbox" id="chk_rsi" onchange="toggleIndicator('rsi', this.checked)">
+                </label>
+                <label class="indicator-toggle">
+                    <span>MACD</span>
+                    <input type="checkbox" id="chk_macd" onchange="toggleIndicator('macd', this.checked)">
+                </label>
+                <label class="indicator-toggle">
+                    <span>MACD Histogram</span>
+                    <input type="checkbox" id="chk_macd_hist" onchange="toggleIndicator('macd_hist', this.checked)">
+                </label>
+            </div>
+        </aside>
+        
+        <main class="chart-area">
+            <div id="chart"></div>
+        </main>
+        
+        <section class="bottom-panel">
+            <div class="panel">
+                <h2>Activity Log</h2>
+                <div class="panel-content" id="log-content"></div>
+            </div>
+            <div class="panel">
+                <h2>Trade History</h2>
+                <div class="panel-content" id="trade-content"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        let candles = [];
+        let indicators = {};
+        let trades = [];
+        let activeIndicators = new Set(['ema_9', 'ema_20']);
+        let lastPanelConfig = '';  // Track panel configuration changes
+        
+        function getLayout() {
+            // Calculate domains based on active indicators
+            const hasRSI = activeIndicators.has('rsi');
+            const hasMACD = activeIndicators.has('macd');
+            const hasMACDHist = activeIndicators.has('macd_hist');
+            
+            // Count sub-panels
+            const subPanelCount = (hasRSI ? 1 : 0) + (hasMACD ? 1 : 0) + (hasMACDHist ? 1 : 0);
+            
+            let priceDomain, rsiDomain, macdLineDomain, macdHistDomain;
+            let nextAxisNum = 2;
+            let rsiAxisNum, macdAxisNum, macdHistAxisNum;
+            
+            // Calculate domains based on which panels are active
+            if (subPanelCount === 0) {
+                priceDomain = [0, 1];
+            } else if (subPanelCount === 1) {
+                priceDomain = [0.25, 1];
+                if (hasRSI) { rsiDomain = [0, 0.23]; rsiAxisNum = nextAxisNum++; }
+                else if (hasMACD) { macdLineDomain = [0, 0.23]; macdAxisNum = nextAxisNum++; }
+                else if (hasMACDHist) { macdHistDomain = [0, 0.23]; macdHistAxisNum = nextAxisNum++; }
+            } else if (subPanelCount === 2) {
+                priceDomain = [0.38, 1];
+                let bottom = 0;
+                if (hasMACDHist) { macdHistDomain = [bottom, bottom + 0.16]; macdHistAxisNum = nextAxisNum++; bottom += 0.19; }
+                if (hasMACD) { macdLineDomain = [bottom, bottom + 0.16]; macdAxisNum = nextAxisNum++; bottom += 0.19; }
+                if (hasRSI) { rsiDomain = [bottom, bottom + 0.16]; rsiAxisNum = nextAxisNum++; }
+            } else {
+                // All 3 panels
+                priceDomain = [0.52, 1];
+                macdHistDomain = [0, 0.12]; macdHistAxisNum = nextAxisNum++;
+                macdLineDomain = [0.14, 0.33]; macdAxisNum = nextAxisNum++;
+                rsiDomain = [0.36, 0.50]; rsiAxisNum = nextAxisNum++;
+            }
+            
+            const layout = {
+                paper_bgcolor: '#1e293b',
+                plot_bgcolor: '#1e293b',
+                font: { color: '#e2e8f0', family: 'system-ui' },
+                margin: { l: 50, r: 50, t: 20, b: 40 },
+                uirevision: 'persistent',  // Preserves zoom/pan state across updates
+                xaxis: {
+                    type: 'date',
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    rangeslider: { visible: false },
+                    autorange: true,
+                    anchor: hasRSI || hasMACD ? 'y' : 'y'
+                },
+                yaxis: {
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    side: 'right',
+                    autorange: true,
+                    fixedrange: false,
+                    domain: priceDomain,
+                    title: { text: 'Price', font: { size: 10 } }
+                },
+                showlegend: false,
+                autosize: true,
+                grid: { rows: subPanelCount + 1, columns: 1, pattern: 'independent' },
+                _axisNums: { rsi: rsiAxisNum, macd: macdAxisNum, macdHist: macdHistAxisNum }
+            };
+            
+            if (hasRSI) {
+                layout['yaxis' + rsiAxisNum] = {
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    side: 'right',
+                    domain: rsiDomain,
+                    range: [0, 100],
+                    fixedrange: false,
+                    title: { text: 'RSI', font: { size: 10 } },
+                    tickvals: [30, 50, 70]
+                };
+                layout['xaxis' + rsiAxisNum] = {
+                    type: 'date',
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    autorange: true,
+                    matches: 'x',
+                    showticklabels: false
+                };
+            }
+            
+            if (hasMACD) {
+                layout['yaxis' + macdAxisNum] = {
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    side: 'right',
+                    domain: macdLineDomain,
+                    autorange: true,
+                    fixedrange: false,
+                    title: { text: 'MACD', font: { size: 10 } },
+                    zeroline: true,
+                    zerolinecolor: '#94a3b8',
+                    zerolinewidth: 1
+                };
+                layout['xaxis' + macdAxisNum] = {
+                    type: 'date',
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    autorange: true,
+                    matches: 'x',
+                    showticklabels: false
+                };
+            }
+            
+            if (hasMACDHist) {
+                layout['yaxis' + macdHistAxisNum] = {
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    side: 'right',
+                    domain: macdHistDomain,
+                    autorange: true,
+                    fixedrange: false,
+                    title: { text: 'Hist', font: { size: 10 } },
+                    zeroline: true,
+                    zerolinecolor: '#94a3b8',
+                    zerolinewidth: 1
+                };
+                layout['xaxis' + macdHistAxisNum] = {
+                    type: 'date',
+                    gridcolor: '#334155',
+                    linecolor: '#334155',
+                    autorange: true,
+                    matches: 'x',
+                    showticklabels: true
+                };
+            }
+            
+            return layout;
+        }
+        
+        const config = { 
+            responsive: true, 
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            displaylogo: false
+        };
+        
+        Plotly.newPlot('chart', [], getLayout(), config);
+        
+        // Load initial data with retry
+        let initialLoadDone = false;
+        
+        function loadInitialData(retryCount = 0) {
+            fetch('/api/candles')
+                .then(r => r.json())
+                .then(candleData => {
+                    console.log('Fetched candles:', candleData?.length || 0);
+                    if (candleData && candleData.length > 0) {
+                        candles = candleData;
+                        updateChart();
+                        initialLoadDone = true;
+                    } else if (retryCount < 5) {
+                        // Retry if no candles yet (simulation might still be starting)
+                        console.log('No candles yet, retrying in 500ms...');
+                        setTimeout(() => loadInitialData(retryCount + 1), 500);
+                        return;
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching candles:', err);
+                    if (retryCount < 5) {
+                        setTimeout(() => loadInitialData(retryCount + 1), 500);
+                    }
+                });
+            
+            // Load other data
+            fetch('/api/state').then(r => r.json()).then(updateState).catch(() => {});
+            fetch('/api/trades').then(r => r.json()).then(data => {
+                if (data && data.length > 0) {
+                    trades = data;
+                    updateTrades();
+                    document.getElementById('trade-count').textContent = trades.length;
+                }
+            }).catch(() => {});
+            fetch('/api/logs').then(r => r.json()).then(logs => {
+                if (logs) logs.forEach(addLog);
+            }).catch(() => {});
+            loadIndicators();
+        }
+        
+        // Load on page ready
+        loadInitialData();
+        
+        // Socket events
+        socket.on('candle', (candle) => {
+            // Only add if newer than last candle (avoid duplicates)
+            if (candles.length === 0 || candle.time > candles[candles.length - 1].time) {
+                candles.push(candle);
+                updateChart();
+                updatePrice();
+            }
+        });
+        
+        socket.on('state', (state) => {
+            document.getElementById('current-value').textContent = 
+                `$${state.current_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const profitEl = document.getElementById('profit');
+            profitEl.textContent = `${state.profit_pct >= 0 ? '+' : ''}${state.profit_pct.toFixed(2)}%`;
+            profitEl.className = 'stat-value ' + (state.profit_pct >= 0 ? 'up' : 'down');
+            
+            const posEl = document.getElementById('position');
+            posEl.textContent = state.position.toUpperCase();
+            posEl.className = 'position-badge ' + state.position;
+            
+            if (state.trade_count !== undefined) {
+                document.getElementById('trade-count').textContent = state.trade_count;
+            }
+            if (state.fees_paid !== undefined) {
+                document.getElementById('fees-paid').textContent = 
+                    `$${state.fees_paid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        });
+        
+        socket.on('log', (entry) => addLog(entry));
+        socket.on('trade', (trade) => {
+            // Only add if not already present (avoid duplicates on reconnect)
+            const isDuplicate = trades.some(t => t.timestamp === trade.timestamp && t.type === trade.type);
+            if (!isDuplicate) {
+                trades.push(trade);
+                updateTrades();
+                updateChart();  // Redraw chart to show new trade arrow
+                document.getElementById('trade-count').textContent = trades.length;
+            }
+        });
+        
+        // Refresh indicators every 10 seconds (lightweight)
+        setInterval(() => {
+            loadIndicators();
+        }, 10000);
+        
+        function updateState(state) {
+            document.getElementById('strategy-name').textContent = state.strategy;
+            document.getElementById('product').textContent = state.product_id;
+            document.getElementById('mode-badge').textContent = state.mode.toUpperCase();
+            
+            const header = document.getElementById('header');
+            header.className = 'header ' + state.mode;
+            
+            document.getElementById('current-value').textContent = 
+                `$${state.current_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const profitEl = document.getElementById('profit');
+            profitEl.textContent = `${state.profit_pct >= 0 ? '+' : ''}${state.profit_pct.toFixed(2)}%`;
+            profitEl.className = 'stat-value ' + (state.profit_pct >= 0 ? 'up' : 'down');
+            
+            const posEl = document.getElementById('position');
+            posEl.textContent = state.position.toUpperCase();
+            posEl.className = 'position-badge ' + state.position;
+            
+            document.getElementById('trade-count').textContent = state.trade_count;
+            document.getElementById('fees-paid').textContent = 
+                `$${state.fees_paid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            if (state.running) {
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Running';
+            } else {
+                statusDot.className = 'status-dot stopped';
+                statusText.textContent = 'Stopped';
+            }
+        }
+        
+        function updateChart() {
+            if (!candles || candles.length === 0) {
+                console.log('No candles to display');
+                return;
+            }
+            
+            try {
+                const times = candles.map(c => new Date(c.time));
+                const hasRSI = activeIndicators.has('rsi');
+                const hasMACD = activeIndicators.has('macd');
+                const hasMACDHist = activeIndicators.has('macd_hist');
+                
+                // Track panel configuration to detect layout changes
+                const currentPanelConfig = `${hasRSI}-${hasMACD}-${hasMACDHist}`;
+                const layoutChanged = currentPanelConfig !== lastPanelConfig;
+                lastPanelConfig = currentPanelConfig;
+                
+                const layout = getLayout();
+                
+                const traces = [{
+                type: 'candlestick',
+                x: times,
+                open: candles.map(c => c.open),
+                high: candles.map(c => c.high),
+                low: candles.map(c => c.low),
+                close: candles.map(c => c.close),
+                increasing: { line: { color: '#22c55e' } },
+                decreasing: { line: { color: '#ef4444' } },
+                yaxis: 'y',
+                xaxis: 'x'
+            }];
+            
+            // Add price-overlay indicators (EMA, BB)
+            for (const name of activeIndicators) {
+                if (name === 'rsi' || name === 'macd') continue; // Handle separately
+                
+                if (indicators[name]) {
+                    const ind = indicators[name];
+                    traces.push({
+                        type: 'scatter',
+                        mode: 'lines',
+                        x: ind.times.map(t => new Date(t)),
+                        y: ind.values,
+                        name: ind.name,
+                        line: { width: 1 },
+                        yaxis: 'y',
+                        xaxis: 'x'
+                    });
+                }
+                if (name === 'bb' && indicators['bb_upper']) {
+                    traces.push({
+                        type: 'scatter', mode: 'lines',
+                        x: indicators['bb_upper'].times.map(t => new Date(t)),
+                        y: indicators['bb_upper'].values,
+                        line: { width: 1, color: '#94a3b8' },
+                        yaxis: 'y', xaxis: 'x'
+                    });
+                    traces.push({
+                        type: 'scatter', mode: 'lines',
+                        x: indicators['bb_lower'].times.map(t => new Date(t)),
+                        y: indicators['bb_lower'].values,
+                        line: { width: 1, color: '#94a3b8' },
+                        yaxis: 'y', xaxis: 'x'
+                    });
+                }
+            }
+            
+            // Add RSI on separate panel
+            if (hasRSI && indicators['rsi'] && layout._axisNums.rsi) {
+                const rsiYAxis = 'y' + layout._axisNums.rsi;
+                const rsiXAxis = 'x' + layout._axisNums.rsi;
+                const rsi = indicators['rsi'];
+                // RSI line
+                traces.push({
+                    type: 'scatter', mode: 'lines',
+                    x: rsi.times.map(t => new Date(t)),
+                    y: rsi.values,
+                    line: { width: 1.5, color: '#f59e0b' },
+                    yaxis: rsiYAxis, xaxis: rsiXAxis
+                });
+                // Overbought line (70)
+                traces.push({
+                    type: 'scatter', mode: 'lines',
+                    x: [new Date(rsi.times[0]), new Date(rsi.times[rsi.times.length - 1])],
+                    y: [70, 70],
+                    line: { width: 1, color: '#ef4444', dash: 'dash' },
+                    yaxis: rsiYAxis, xaxis: rsiXAxis
+                });
+                // Oversold line (30)
+                traces.push({
+                    type: 'scatter', mode: 'lines',
+                    x: [new Date(rsi.times[0]), new Date(rsi.times[rsi.times.length - 1])],
+                    y: [30, 30],
+                    line: { width: 1, color: '#22c55e', dash: 'dash' },
+                    yaxis: rsiYAxis, xaxis: rsiXAxis
+                });
+            }
+            
+            // Add MACD lines panel
+            if (hasMACD && indicators['macd'] && layout._axisNums.macd) {
+                const macdLineYAxis = 'y' + layout._axisNums.macd;
+                const macdLineXAxis = 'x' + layout._axisNums.macd;
+                const macd = indicators['macd'];
+                
+                // MACD line
+                traces.push({
+                    type: 'scatter', mode: 'lines',
+                    x: macd.times.map(t => new Date(t)),
+                    y: macd.values,
+                    line: { width: 1.5, color: '#3b82f6' },
+                    yaxis: macdLineYAxis, xaxis: macdLineXAxis
+                });
+                
+                // Signal line
+                if (indicators['macd_signal']) {
+                    const signal = indicators['macd_signal'];
+                    traces.push({
+                        type: 'scatter', mode: 'lines',
+                        x: signal.times.map(t => new Date(t)),
+                        y: signal.values,
+                        line: { width: 1.5, color: '#f97316' },
+                        yaxis: macdLineYAxis, xaxis: macdLineXAxis
+                    });
+                }
+            }
+            
+            // Add MACD Histogram panel (separate)
+            if (hasMACDHist && indicators['macd_histogram'] && layout._axisNums.macdHist) {
+                const macdHistYAxis = 'y' + layout._axisNums.macdHist;
+                const macdHistXAxis = 'x' + layout._axisNums.macdHist;
+                const hist = indicators['macd_histogram'];
+                traces.push({
+                    type: 'bar',
+                    x: hist.times.map(t => new Date(t)),
+                    y: hist.values,
+                    marker: { 
+                        color: hist.values.map(v => v >= 0 ? '#22c55e' : '#ef4444')
+                    },
+                    yaxis: macdHistYAxis, xaxis: macdHistXAxis
+                });
+            }
+            
+            // Add trade markers
+            const buyTrades = trades.filter(t => t.type === 'buy');
+            const sellTrades = trades.filter(t => t.type === 'sell');
+            
+            if (buyTrades.length > 0) {
+                traces.push({
+                    type: 'scatter', mode: 'markers',
+                    x: buyTrades.map(t => new Date(t.timestamp * 1000)),
+                    y: buyTrades.map(t => t.price),
+                    marker: { color: '#22c55e', size: 12, symbol: 'triangle-up' },
+                    yaxis: 'y', xaxis: 'x'
+                });
+            }
+            
+            if (sellTrades.length > 0) {
+                traces.push({
+                    type: 'scatter', mode: 'markers',
+                    x: sellTrades.map(t => new Date(t.timestamp * 1000)),
+                    y: sellTrades.map(t => t.price),
+                    marker: { color: '#ef4444', size: 12, symbol: 'triangle-down' },
+                    yaxis: 'y', xaxis: 'x'
+                });
+            }
+            
+                // When panel configuration changes, purge and recreate to avoid Plotly issues
+                if (layoutChanged) {
+                    Plotly.purge('chart');
+                    Plotly.newPlot('chart', traces, layout, config);
+                } else {
+                    Plotly.react('chart', traces, layout, config);
+                }
+                document.getElementById('candle-count').textContent = `${candles.length} candles`;
+            } catch (err) {
+                console.error('Error updating chart:', err);
+            }
+        }
+        
+        function updatePrice() {
+            if (candles.length === 0) return;
+            const price = candles[candles.length - 1].close;
+            document.getElementById('price').textContent = 
+                `$${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+        
+        function updateTrades() {
+            const content = document.getElementById('trade-content');
+            content.innerHTML = '';
+            
+            trades.slice().reverse().slice(0, 20).forEach(trade => {
+                const div = document.createElement('div');
+                div.className = 'trade-item';
+                div.innerHTML = `
+                    <span class="trade-type ${trade.type}">${trade.type.toUpperCase()}</span>
+                    <span>$${trade.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                `;
+                content.appendChild(div);
+            });
+        }
+        
+        function addLog(entry) {
+            const content = document.getElementById('log-content');
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            
+            let msgClass = '';
+            if (entry.message.includes('BUY') || entry.message.includes('Bought')) msgClass = 'log-buy';
+            if (entry.message.includes('SELL') || entry.message.includes('Sold')) msgClass = 'log-sell';
+            
+            div.innerHTML = `<span class="log-time">${entry.time}</span><span class="${msgClass}">${entry.message}</span>`;
+            content.appendChild(div);
+            content.scrollTop = content.scrollHeight;
+        }
+        
+        function loadIndicators() {
+            fetch('/api/indicators')
+                .then(r => r.json())
+                .then(data => {
+                    if (data && Object.keys(data).length > 0) {
+                        indicators = data;
+                        updateChart();
+                    }
+                })
+                .catch(err => console.error('Error loading indicators:', err));
+        }
+        
+        function refreshCandles() {
+            fetch('/api/candles')
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        candles = data;
+                        updateChart();
+                    }
+                })
+                .catch(err => console.error('Error refreshing candles:', err));
+        }
+        
+        function toggleIndicator(name, checked) {
+            if (checked) {
+                activeIndicators.add(name);
+                // Load indicators first, then update chart
+                loadIndicators();
+            } else {
+                activeIndicators.delete(name);
+                updateChart();
+            }
+        }
+        
+        // Refresh state periodically (lightweight)
+        setInterval(() => {
+            fetch('/api/state').then(r => r.json()).then(updateState).catch(() => {});
+        }, 5000);
+        
+        setInterval(updatePrice, 1000);
+    </script>
+</body>
+</html>

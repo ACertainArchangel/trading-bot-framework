@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Framework Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 60px 1fr 200px;
+            gap: 12px;
+            padding: 12px;
+            height: 100vh;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 12px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 { font-size: 20px; font-weight: 600; }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .sidebar {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            font-size: 14px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+        
+        .stat {
+            background: #334155;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'SF Mono', monospace;
+        }
+        
+        .stat-value.up { color: #22c55e; }
+        .stat-value.down { color: #ef4444; }
+        
+        .indicators {
+            margin-top: 16px;
+        }
+        
+        .indicator-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+            cursor: pointer;
+        }
+        
+        .indicator-toggle:hover { background: #334155; margin: 0 -8px; padding: 8px; border-radius: 4px; }
+        
+        .chart-area {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 8px;
+            position: relative;
+        }
+        
+        #chart { width: 100%; height: 100%; }
+        
+        .logs {
+            grid-column: 1 / -1;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logs h2 {
+            font-size: 14px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+        
+        .log-entry:hover { background: #334155; }
+        
+        .log-time { color: #64748b; margin-right: 8px; }
+        .log-buy { color: #22c55e; }
+        .log-sell { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📈 Trading Framework</h1>
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span id="product">BTC-USD</span>
+                </div>
+                <div class="status-item">
+                    <span id="candle-count">0 candles</span>
+                </div>
+            </div>
+        </header>
+        
+        <aside class="sidebar">
+            <h2>Market Data</h2>
+            <div class="stat">
+                <div class="stat-label">Current Price</div>
+                <div class="stat-value" id="price">$0.00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">24h Change</div>
+                <div class="stat-value" id="change">0.00%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">24h Volume</div>
+                <div class="stat-value" id="volume">0.00</div>
+            </div>
+            
+            <div class="indicators">
+                <h2>Indicators</h2>
+                <div class="indicator-toggle" onclick="toggleIndicator('ema_9')">
+                    <span>EMA 9</span>
+                    <input type="checkbox" id="chk_ema_9" checked>
+                </div>
+                <div class="indicator-toggle" onclick="toggleIndicator('ema_20')">
+                    <span>EMA 20</span>
+                    <input type="checkbox" id="chk_ema_20" checked>
+                </div>
+                <div class="indicator-toggle" onclick="toggleIndicator('bb')">
+                    <span>Bollinger Bands</span>
+                    <input type="checkbox" id="chk_bb">
+                </div>
+                <div class="indicator-toggle" onclick="toggleIndicator('sma_50')">
+                    <span>SMA 50</span>
+                    <input type="checkbox" id="chk_sma_50">
+                </div>
+            </div>
+        </aside>
+        
+        <main class="chart-area">
+            <div id="chart"></div>
+        </main>
+        
+        <section class="logs">
+            <h2>Activity Log</h2>
+            <div class="log-content" id="log-content"></div>
+        </section>
+    </div>
+
+    <script>
+        // Connect to WebSocket
+        const socket = io();
+        
+        // State
+        let candles = [];
+        let indicators = {};
+        let activeIndicators = new Set(['ema_9', 'ema_20']);
+        
+        // Initialize chart
+        const layout = {
+            paper_bgcolor: '#1e293b',
+            plot_bgcolor: '#1e293b',
+            font: { color: '#e2e8f0', family: 'system-ui' },
+            margin: { l: 50, r: 20, t: 20, b: 40 },
+            xaxis: {
+                type: 'date',
+                gridcolor: '#334155',
+                linecolor: '#334155',
+                rangeslider: { visible: false }
+            },
+            yaxis: {
+                gridcolor: '#334155',
+                linecolor: '#334155',
+                side: 'right'
+            },
+            showlegend: false
+        };
+        
+        Plotly.newPlot('chart', [], layout, { 
+            responsive: true,
+            displayModeBar: false
+        });
+        
+        // Load initial data
+        fetch('/api/candles')
+            .then(r => r.json())
+            .then(data => {
+                candles = data;
+                updateChart();
+                loadIndicators();
+            });
+        
+        fetch('/api/config')
+            .then(r => r.json())
+            .then(config => {
+                document.getElementById('product').textContent = config.product_id;
+            });
+        
+        // Socket events
+        socket.on('candle', (candle) => {
+            candles.push(candle);
+            if (candles.length > 500) candles.shift();
+            updateChart();
+            updateStats();
+        });
+        
+        socket.on('log', (entry) => {
+            addLog(entry);
+        });
+        
+        function updateChart() {
+            const times = candles.map(c => new Date(c.time));
+            
+            const traces = [{
+                type: 'candlestick',
+                x: times,
+                open: candles.map(c => c.open),
+                high: candles.map(c => c.high),
+                low: candles.map(c => c.low),
+                close: candles.map(c => c.close),
+                increasing: { line: { color: '#22c55e' } },
+                decreasing: { line: { color: '#ef4444' } }
+            }];
+            
+            // Add active indicators
+            for (const name of activeIndicators) {
+                if (indicators[name]) {
+                    const ind = indicators[name];
+                    traces.push({
+                        type: 'scatter',
+                        mode: 'lines',
+                        x: ind.times.map(t => new Date(t)),
+                        y: ind.values,
+                        name: ind.name,
+                        line: { width: 1 }
+                    });
+                }
+            }
+            
+            Plotly.react('chart', traces, layout);
+            
+            document.getElementById('candle-count').textContent = `${candles.length} candles`;
+        }
+        
+        function updateStats() {
+            if (candles.length === 0) return;
+            
+            const current = candles[candles.length - 1];
+            const price = current.close;
+            
+            document.getElementById('price').textContent = `$${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Calculate 24h change
+            const dayAgo = candles.find(c => c.time <= current.time - 86400000);
+            if (dayAgo) {
+                const change = ((price - dayAgo.close) / dayAgo.close) * 100;
+                const changeEl = document.getElementById('change');
+                changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                changeEl.className = 'stat-value ' + (change >= 0 ? 'up' : 'down');
+            }
+            
+            // Volume
+            const recentVolume = candles.slice(-24).reduce((sum, c) => sum + c.volume, 0);
+            document.getElementById('volume').textContent = recentVolume.toFixed(2);
+        }
+        
+        function loadIndicators() {
+            fetch('/api/indicators')
+                .then(r => r.json())
+                .then(data => {
+                    indicators = data;
+                    updateChart();
+                });
+        }
+        
+        function toggleIndicator(name) {
+            const checkbox = document.getElementById('chk_' + name);
+            if (activeIndicators.has(name)) {
+                activeIndicators.delete(name);
+                checkbox.checked = false;
+            } else {
+                activeIndicators.add(name);
+                checkbox.checked = true;
+            }
+            updateChart();
+        }
+        
+        function addLog(entry) {
+            const content = document.getElementById('log-content');
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            
+            let msgClass = '';
+            if (entry.message.includes('BUY')) msgClass = 'log-buy';
+            if (entry.message.includes('SELL')) msgClass = 'log-sell';
+            
+            div.innerHTML = `<span class="log-time">${entry.time}</span><span class="${msgClass}">${entry.message}</span>`;
+            content.appendChild(div);
+            content.scrollTop = content.scrollHeight;
+        }
+        
+        // Refresh indicators periodically
+        setInterval(loadIndicators, 60000);
+        setInterval(updateStats, 1000);
+    </script>
+</body>
+</html>
